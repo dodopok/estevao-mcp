@@ -25,7 +25,8 @@
     "record-fixtures": "tsx scripts/record-fixtures.ts",
     "inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
     "start:http": "node dist/http.js",
-    "dev:http": "tsx src/http.ts"
+    "dev:http": "tsx src/http.ts",
+    "version": "tsx scripts/sync-version.ts && git add server.json"
   },
   "keywords": [
     "mcp",

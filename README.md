@@ -107,10 +107,16 @@ SMOKE_KEY=estevao_… npx tsx scripts/smoke.ts
 
 ## Releasing
 
-Bump the version in **both** `package.json` and `server.json` (registry limit: description ≤ 100 chars), then either:
+```bash
+npm version patch        # bumps package.json AND server.json (version hook), commits + tags
+git push --follow-tags
+npm publish --access public
+mcp-publisher publish    # mcp-publisher login github, first time
+```
 
-- **Manual** (current flow): `npm publish --access public`, then `mcp-publisher login github && mcp-publisher publish`.
-- **CI**: tag `vX.Y.Z` — GitHub Actions publishes to npm (provenance) and to the [MCP registry](https://registry.modelcontextprotocol.io) via GitHub OIDC. Requires the `NPM_TOKEN` repo secret.
+The npm `version` lifecycle hook (`scripts/sync-version.ts`) keeps `server.json` in sync and enforces the registry's 100-char description limit. The server's advertised MCP version comes from `package.json` at build time.
+
+Alternatively, once GitHub Actions is available with the `NPM_TOKEN` secret, `git push --follow-tags` alone triggers the release workflow (npm with provenance + MCP registry via GitHub OIDC).
 
 ## License
 
