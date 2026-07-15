@@ -1,0 +1,55 @@
+{
+  "name": "estevao-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the Estêvão API — Anglican liturgical calendar, lectionary and Daily Office (Book of Common Prayer / Livro de Oração Comum)",
+  "mcpName": "io.github.dodopok/estevao-mcp",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "estevao-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "record-fixtures": "tsx scripts/record-fixtures.ts",
+    "inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "anglican",
+    "liturgy",
+    "lectionary",
+    "book-of-common-prayer",
+    "daily-office",
+    "liturgical-calendar"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dodopok/estevao-mcp.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "lru-cache": "^11.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "msw": "^2.7.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
