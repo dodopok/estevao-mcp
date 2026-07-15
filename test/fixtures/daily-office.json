@@ -10,20 +10,20 @@
       "name": "Abertura",
       "slug": "opening",
       "lines": [
-        { "content": "Completas", "line_type": "heading", "reference": null, "audio_id": null },
-        { "content": "O oficiante inicia dizendo", "line_type": "rubric", "reference": null, "audio_id": null },
-        { "content": "O Senhor Todo-Poderoso nos conceda uma noite tranquila e um fim perfeito.", "line_type": "leader", "reference": null, "audio_id": null },
-        { "content": "Amém.", "line_type": "congregation", "reference": null, "audio_id": null }
+        { "text": "Completas", "type": "heading", "slug": "title" },
+        { "text": "O oficiante inicia dizendo", "type": "rubric" },
+        { "text": "O Senhor Todo-Poderoso nos conceda uma noite tranquila e um fim perfeito.", "type": "leader" },
+        { "text": "Amém.", "type": "congregation" }
       ]
     },
     {
       "name": "Salmo",
       "slug": "psalm",
       "lines": [
-        { "content": "Salmo 134", "line_type": "subheading", "reference": null, "audio_id": null },
-        { "content": "Bendizei ao Senhor, todos os servos do Senhor.", "line_type": "responsive", "reference": "Sl 134.1", "audio_id": null },
-        { "content": "", "line_type": "spacer", "reference": null, "audio_id": null },
-        { "content": "Glória ao Pai, e ao Filho, e ao Espírito Santo.", "line_type": "congregation", "reference": null, "audio_id": null }
+        { "text": "Salmo 134", "type": "subtitle" },
+        { "text": "Bendizei ao Senhor, todos os servos do Senhor.", "type": "reading_text", "verse_number": 1 },
+        { "text": "", "type": "spacer" },
+        { "text": "Glória ao Pai, e ao Filho, e ao Espírito Santo.", "type": "all" }
       ]
     }
   ],

@@ -69,6 +69,7 @@ export interface OfficeLine {
   content: string;
   type: string;
   reference?: string | null;
+  verseNumber?: number;
 }
 
 export interface OfficeModule {

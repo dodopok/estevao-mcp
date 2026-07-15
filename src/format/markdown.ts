@@ -25,26 +25,31 @@ export function renderOfficeMarkdown(office: DailyOffice, fallbackLanguage?: str
 }
 
 function renderLine(line: OfficeLine): string | undefined {
+  const content = line.content.trim();
   const ref = line.reference ? ` *(${line.reference})*` : "";
+  const verse = line.verseNumber != null ? `**${line.verseNumber}** ` : "";
+  if (!content && line.type !== "spacer") return undefined;
   switch (line.type) {
     case "heading":
-      return `### ${line.content}`;
+      return `### ${content}`;
     case "subheading":
-      return `#### ${line.content}`;
+    case "subtitle":
+      return `#### ${content}`;
     case "rubric":
-      return `*${line.content}*`;
+      return `*${content}*`;
     case "congregation":
     case "responsive":
-      return `**${line.content}**${ref}`;
+    case "all":
+      return `**${verse}${content}**${ref}`;
     case "citation":
-      return `— ${line.content}`;
+      return `— ${content}`;
     case "spacer":
       return undefined;
     case "html":
-      return stripHtml(line.content) + ref;
+      return stripHtml(content) + ref;
     default:
-      // leader, reader, plain text
-      return line.content + ref;
+      // leader, reader, text, reading_text, plain content
+      return verse + content + ref;
   }
 }
 

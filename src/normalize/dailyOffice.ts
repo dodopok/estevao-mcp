@@ -28,10 +28,13 @@ function normalizeModule(raw: Raw): OfficeModule {
   };
 }
 
+// The live API emits { text, type, slug?, verse_number? }; the swagger doc
+// describes { content, line_type, reference } — accept both shapes.
 function normalizeLine(raw: Raw): OfficeLine {
   return {
-    content: String(raw.content ?? ""),
-    type: String(raw.line_type ?? "text"),
+    content: String(raw.text ?? raw.content ?? ""),
+    type: String(raw.type ?? raw.line_type ?? "text"),
     reference: (raw.reference as string | null | undefined) ?? undefined,
+    verseNumber: raw.verse_number != null ? Number(raw.verse_number) : undefined,
   };
 }

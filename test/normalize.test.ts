@@ -60,6 +60,7 @@ describe("normalizeDailyOffice + renderOfficeMarkdown", () => {
       content: "Completas",
       type: "heading",
       reference: undefined,
+      verseNumber: undefined,
     });
     expect(office.language).toBe("pt-BR");
 
@@ -69,8 +70,10 @@ describe("normalizeDailyOffice + renderOfficeMarkdown", () => {
     expect(markdown).toContain("**Tempo:** Tempo Comum");
     expect(markdown).toContain("### Completas");
     expect(markdown).toContain("*O oficiante inicia dizendo*");
+    expect(markdown).toContain("#### Salmo 134");
+    expect(markdown).toContain("**1** Bendizei ao Senhor");
+    expect(markdown).toContain("**Glória ao Pai, e ao Filho, e ao Espírito Santo.**");
     expect(markdown).toContain("**Amém.**");
-    expect(markdown).toContain("*(Sl 134.1)*");
     expect(markdown).not.toContain("spacer");
   });
 
