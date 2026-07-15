@@ -1,0 +1,37 @@
+{
+  "date": "2026-07-14",
+  "office_type": "compline",
+  "season": "Tempo Comum",
+  "color": "verde",
+  "celebration": null,
+  "saint": null,
+  "modules": [
+    {
+      "name": "Abertura",
+      "slug": "opening",
+      "lines": [
+        { "content": "Completas", "line_type": "heading", "reference": null, "audio_id": null },
+        { "content": "O oficiante inicia dizendo", "line_type": "rubric", "reference": null, "audio_id": null },
+        { "content": "O Senhor Todo-Poderoso nos conceda uma noite tranquila e um fim perfeito.", "line_type": "leader", "reference": null, "audio_id": null },
+        { "content": "Amém.", "line_type": "congregation", "reference": null, "audio_id": null }
+      ]
+    },
+    {
+      "name": "Salmo",
+      "slug": "psalm",
+      "lines": [
+        { "content": "Salmo 134", "line_type": "subheading", "reference": null, "audio_id": null },
+        { "content": "Bendizei ao Senhor, todos os servos do Senhor.", "line_type": "responsive", "reference": "Sl 134.1", "audio_id": null },
+        { "content": "", "line_type": "spacer", "reference": null, "audio_id": null },
+        { "content": "Glória ao Pai, e ao Filho, e ao Espírito Santo.", "line_type": "congregation", "reference": null, "audio_id": null }
+      ]
+    }
+  ],
+  "metadata": {
+    "prayer_book_code": "loc_2015",
+    "prayer_book_name": "IEAB - 2015",
+    "bible_version": "nvi",
+    "language": "pt-BR",
+    "seed": 1234567890
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "data": "2026-07-19",
+  "dia_da_semana": "domingo",
+  "ciclo": "C",
+  "leituras": {
+    "primeira_leitura": { "reference": "Amós 8.1-12", "alternative_reference": "Gênesis 18.1-10a" },
+    "salmo": { "reference": "Salmo 52" },
+    "segunda_leitura": { "reference": "Colossenses 1.15-28" },
+    "evangelho": { "reference": "Lucas 10.38-42" }
+  }
+}

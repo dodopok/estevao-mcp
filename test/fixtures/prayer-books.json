@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "code": "loc_2015",
+      "name": "IEAB - 2015",
+      "full_name": "Livro de Oração Comum 2015",
+      "description": "LOC da Igreja Episcopal Anglicana do Brasil",
+      "language": "pt-BR",
+      "jurisdiction": "IEAB",
+      "year": 2015,
+      "is_recommended": true,
+      "premium_required": false,
+      "available_offices": ["morning", "midday", "evening", "compline"],
+      "supports_family_rite": true
+    },
+    {
+      "id": 7,
+      "code": "loc_1549",
+      "name": "LOC - 1549",
+      "full_name": "The Booke of the Common Prayer 1549",
+      "language": "pt-BR",
+      "year": 1549,
+      "is_recommended": false,
+      "premium_required": true,
+      "available_offices": ["morning", "evening"],
+      "supports_family_rite": false
+    }
+  ]
+}

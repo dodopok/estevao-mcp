@@ -1,0 +1,16 @@
+{
+  "total": 1,
+  "celebracoes": [
+    {
+      "id": 42,
+      "nome": "Dia de Pentecostes",
+      "nome_latino": "Dies Pentecostes",
+      "tipo": "principal_feast",
+      "tipo_nome": "Festa Principal",
+      "rank": 1,
+      "data_fixa": null,
+      "movel": true,
+      "cor_liturgica": "vermelho"
+    }
+  ]
+}

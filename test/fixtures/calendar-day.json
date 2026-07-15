@@ -1,0 +1,33 @@
+{
+  "season_post_slug": "tempo-comum",
+  "date": "2026-07-14",
+  "day_of_week": "terça-feira",
+  "liturgical_season": "Tempo Comum",
+  "liturgical_color": "verde",
+  "liturgical_year": "C",
+  "is_sunday": false,
+  "is_holy_day": false,
+  "sunday_name": null,
+  "description": ["Feria"],
+  "week_of_season": 7,
+  "proper_week": 10,
+  "sunday_after_pentecost": 6,
+  "celebration": {},
+  "saint": {},
+  "collect": [{ "texto": "Ó Deus, que preparaste para os que te amam..." }],
+  "readings": {
+    "primeira_leitura": { "reference": "Isaías 1.10-17" },
+    "salmo": { "reference": "Salmo 50.7-15" },
+    "evangelho": { "reference": "Mateus 10.34—11.1" }
+  },
+  "morning_readings": {
+    "salmo": { "reference": "Salmo 26" },
+    "primeira_leitura": { "reference": "Josué 8.1-22" },
+    "segunda_leitura": { "reference": "Romanos 14.1-12" }
+  },
+  "evening_readings": {
+    "salmo": { "reference": "Salmo 28" },
+    "primeira_leitura": { "reference": "Josué 8.30-35" },
+    "segunda_leitura": { "reference": "Mateus 26.36-46" }
+  }
+}
