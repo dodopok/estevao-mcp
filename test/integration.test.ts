@@ -38,17 +38,19 @@ function firstText(result: Awaited<ReturnType<Client["callTool"]>>): string {
 }
 
 describe("estevao-mcp end to end", () => {
-  it("lists the five Phase 1 tools", async () => {
+  it("exposes the core tools, all read-only", async () => {
     const client = await connectedClient();
     const { tools } = await client.listTools();
-    const names = tools.map((t) => t.name).sort();
-    expect(names).toEqual([
+    const names = tools.map((t) => t.name);
+    for (const core of [
       "get_daily_office",
       "get_liturgical_day",
       "get_readings",
       "list_prayer_books",
       "search_celebrations",
-    ]);
+    ]) {
+      expect(names).toContain(core);
+    }
     for (const tool of tools) {
       expect(tool.annotations?.readOnlyHint).toBe(true);
     }
