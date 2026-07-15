@@ -63,13 +63,32 @@ describe("normalizeDailyOffice + renderOfficeMarkdown", () => {
     });
     expect(office.language).toBe("pt-BR");
 
+    // labels follow the office's own language (pt-BR here)
     const markdown = renderOfficeMarkdown(office);
-    expect(markdown).toContain("# Compline — 2026-07-14");
+    expect(markdown).toContain("# Completas — 2026-07-14");
+    expect(markdown).toContain("**Tempo:** Tempo Comum");
     expect(markdown).toContain("### Completas");
     expect(markdown).toContain("*O oficiante inicia dizendo*");
     expect(markdown).toContain("**Amém.**");
     expect(markdown).toContain("*(Sl 134.1)*");
     expect(markdown).not.toContain("spacer");
+  });
+
+  it("renders labels in English or Spanish when the office language says so", () => {
+    const office = normalizeDailyOffice(dailyOffice, "loc_2015");
+
+    const en = renderOfficeMarkdown({ ...office, language: "en" });
+    expect(en).toContain("# Compline — 2026-07-14");
+    expect(en).toContain("**Season:** Tempo Comum");
+
+    const es = renderOfficeMarkdown({ ...office, language: "es" });
+    expect(es).toContain("# Completas — 2026-07-14");
+    expect(es).toContain("**Tiempo:** Tempo Comum");
+
+    // unknown office language → fallback param → English default
+    const fallback = renderOfficeMarkdown({ ...office, language: undefined }, "pt-BR");
+    expect(fallback).toContain("# Completas — 2026-07-14");
+    expect(renderOfficeMarkdown({ ...office, language: undefined })).toContain("# Compline —");
   });
 });
 

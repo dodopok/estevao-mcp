@@ -3,6 +3,8 @@ export interface Config {
   baseUrl: string;
   defaultPrayerBook: string;
   timezone?: string;
+  /** Default language for generated labels and upstream preferences[language]. */
+  language?: string;
 }
 
 const KEY_FORMAT = /^estevao_[0-9a-f]{48}$/;
@@ -24,5 +26,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     baseUrl: (env.ESTEVAO_BASE_URL ?? "https://api.caminhoanglicano.com.br").replace(/\/+$/, ""),
     defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK ?? "loc_2015",
     timezone: env.ESTEVAO_TIMEZONE,
+    language: env.ESTEVAO_LANGUAGE,
   };
 }

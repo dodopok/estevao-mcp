@@ -27,7 +27,7 @@ export function buildPreferences(
   return {
     prayerBook: args.prayer_book ?? ctx.config.defaultPrayerBook,
     bibleVersion: args.bible_version,
-    language: args.language,
+    language: args.language ?? ctx.config.language,
     readingType: args.reading_type,
   };
 }

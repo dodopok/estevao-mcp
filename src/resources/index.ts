@@ -93,7 +93,13 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
         normalizeDailyOffice(await ctx.api.getDailyOffice(date, officeType, prefs), prefs.prayerBook),
       );
       return {
-        contents: [{ uri: uri.href, mimeType: "text/markdown", text: renderOfficeMarkdown(office) }],
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "text/markdown",
+            text: renderOfficeMarkdown(office, ctx.config.language),
+          },
+        ],
       };
     },
   );

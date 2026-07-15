@@ -177,7 +177,7 @@ describe("resources", () => {
     const result = await client.readResource({ uri: "ordo://office/2026-07-14/compline" });
     const content = result.contents[0] as { mimeType?: string; text: string };
     expect(content.mimeType).toBe("text/markdown");
-    expect(content.text).toContain("# Compline — 2026-07-14");
+    expect(content.text).toContain("# Completas — 2026-07-14");
   });
 });
 

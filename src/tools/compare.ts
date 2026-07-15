@@ -6,6 +6,7 @@ import { resolveDate, toIso } from "../dates.js";
 import { cached, TTL_IMMUTABLE } from "../cache/lru.js";
 import { normalizeLiturgicalDay } from "../normalize/calendar.js";
 import { renderOfficeMarkdown } from "../format/markdown.js";
+import { labels, resolveLocale } from "../format/i18n.js";
 import { fetchOffice } from "./office.js";
 import { dateParam, jsonResult, safeHandler, textResult } from "./shared.js";
 
@@ -68,13 +69,14 @@ export function registerCompareTools(server: McpServer, ctx: ServerContext): voi
         );
         const comparison = { date: toIso(date), comparison: Object.fromEntries(entries) };
         if (args.format === "markdown") {
+          const t = labels(resolveLocale(ctx.config.language));
           const sections = entries.map(
             ([book, data]) =>
-              `## ${book}\n\n- **Season:** ${data.season ?? "—"}\n- **Color:** ${data.color ?? "—"}\n` +
-              `- **Celebration:** ${celebrationName(data.celebration) ?? celebrationName(data.saint) ?? "—"}\n` +
-              `- **Readings:** ${JSON.stringify(data.readings ?? {})}`,
+              `## ${book}\n\n- **${t.season}:** ${data.season ?? "—"}\n- **${t.color}:** ${data.color ?? "—"}\n` +
+              `- **${t.celebration}:** ${celebrationName(data.celebration) ?? celebrationName(data.saint) ?? "—"}\n` +
+              `- **${t.readings}:** ${JSON.stringify(data.readings ?? {})}`,
           );
-          return textResult(`# Comparison — ${toIso(date)}\n\n${sections.join("\n\n")}`);
+          return textResult(`# ${t.comparison} — ${toIso(date)}\n\n${sections.join("\n\n")}`);
         }
         return jsonResult(comparison);
       }
@@ -91,10 +93,11 @@ export function registerCompareTools(server: McpServer, ctx: ServerContext): voi
       if (args.format === "structured") {
         return jsonResult({ office: args.office, comparison: Object.fromEntries(offices) });
       }
+      const t = labels(resolveLocale(ctx.config.language));
       const sections = offices.map(([book, office]) =>
         "error" in (office as object)
-          ? `# ${book}\n\n*Unavailable: ${(office as { error: string }).error}*`
-          : `# ${book}\n\n${renderOfficeMarkdown(office as Parameters<typeof renderOfficeMarkdown>[0])}`,
+          ? `# ${book}\n\n*${t.unavailable}: ${(office as { error: string }).error}*`
+          : `# ${book}\n\n${renderOfficeMarkdown(office as Parameters<typeof renderOfficeMarkdown>[0], ctx.config.language)}`,
       );
       return textResult(sections.join("\n\n---\n\n"));
     }),

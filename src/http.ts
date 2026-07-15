@@ -16,6 +16,7 @@ export interface HttpEnv {
   baseUrl: string;
   defaultPrayerBook: string;
   timezone?: string;
+  language?: string;
   allowedHosts?: string[];
   /** Test seam: fetch implementation used for upstream Estêvão API calls. */
   upstreamFetch?: typeof fetch;
@@ -32,6 +33,7 @@ export function loadHttpEnv(env: NodeJS.ProcessEnv = process.env): HttpEnv {
     baseUrl: (env.ESTEVAO_BASE_URL ?? "https://api.caminhoanglicano.com.br").replace(/\/+$/, ""),
     defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK ?? "loc_2015",
     timezone: env.ESTEVAO_TIMEZONE,
+    language: env.ESTEVAO_LANGUAGE,
     allowedHosts: env.ESTEVAO_MCP_ALLOWED_HOSTS?.split(",")
       .map((h) => h.trim())
       .filter(Boolean),
@@ -75,6 +77,7 @@ export function createApp(env: HttpEnv): express.Express {
       baseUrl: env.baseUrl,
       defaultPrayerBook: env.defaultPrayerBook,
       timezone: env.timezone,
+      language: env.language,
     };
     const server = createEstevaoServer({ api: apiFor(key), config });
     const transport = new StreamableHTTPServerTransport({

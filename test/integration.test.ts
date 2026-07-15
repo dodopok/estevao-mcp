@@ -86,7 +86,8 @@ describe("estevao-mcp end to end", () => {
       arguments: { date: "2026-07-14", office: "compline" },
     });
     const text = firstText(result);
-    expect(text).toContain("# Compline — 2026-07-14");
+    expect(text).toContain("# Completas — 2026-07-14");
+    expect(text).toContain("**Tempo:** Tempo Comum");
     expect(text).toContain("## Abertura");
   });
 

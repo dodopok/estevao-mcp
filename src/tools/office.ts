@@ -43,6 +43,10 @@ export function registerOfficeTools(server: McpServer, ctx: ServerContext): void
         family: z.boolean().optional().describe("Family rite variant, when the book supports it"),
         prayer_book: prayerBookParam,
         bible_version: z.string().optional(),
+        language: z
+          .string()
+          .optional()
+          .describe("Label/response language: pt-BR, en or es (defaults to the prayer book's language)"),
         format: z.enum(["markdown", "structured"]).optional().describe("Output format (default markdown)"),
       },
       annotations: readOnly,
@@ -51,7 +55,7 @@ export function registerOfficeTools(server: McpServer, ctx: ServerContext): void
       const prefs = buildPreferences(ctx, args);
       const office = await fetchOffice(ctx, args.date, args.office, prefs, args.family ?? false);
       if (args.format === "structured") return jsonResult(office);
-      return textResult(renderOfficeMarkdown(office));
+      return textResult(renderOfficeMarkdown(office, prefs.language));
     }),
   );
 }

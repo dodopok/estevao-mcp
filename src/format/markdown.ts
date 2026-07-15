@@ -1,13 +1,19 @@
 import type { DailyOffice, OfficeLine } from "../normalize/types.js";
+import { labels, resolveLocale } from "./i18n.js";
 
-/** Render a normalized Daily Office as readable markdown (default tool output). */
-export function renderOfficeMarkdown(office: DailyOffice): string {
+/**
+ * Render a normalized Daily Office as readable markdown (default tool output).
+ * Generated labels follow the office's own language, falling back to
+ * `fallbackLanguage` (e.g. ESTEVAO_LANGUAGE) and then English.
+ */
+export function renderOfficeMarkdown(office: DailyOffice, fallbackLanguage?: string): string {
+  const t = labels(resolveLocale(office.language, fallbackLanguage));
   const parts: string[] = [];
   const header = [
-    `# ${titleForOffice(office.officeType)} — ${office.date}`,
-    office.season && `**Season:** ${office.season}`,
-    office.color && `**Color:** ${office.color}`,
-    office.prayerBook && `**Prayer book:** ${office.prayerBook}`,
+    `# ${t.offices[office.officeType] ?? office.officeType} — ${office.date}`,
+    office.season && `**${t.season}:** ${office.season}`,
+    office.color && `**${t.color}:** ${office.color}`,
+    office.prayerBook && `**${t.prayerBook}:** ${office.prayerBook}`,
   ].filter(Boolean);
   parts.push(header.join("  \n"));
 
@@ -40,17 +46,6 @@ function renderLine(line: OfficeLine): string | undefined {
       // leader, reader, plain text
       return line.content + ref;
   }
-}
-
-function titleForOffice(officeType: string): string {
-  const titles: Record<string, string> = {
-    morning: "Morning Prayer",
-    midday: "Midday Prayer",
-    evening: "Evening Prayer",
-    compline: "Compline",
-    late_evening: "Late Evening Prayer",
-  };
-  return titles[officeType] ?? officeType;
 }
 
 function stripHtml(html: string): string {
