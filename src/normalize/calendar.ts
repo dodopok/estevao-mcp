@@ -26,6 +26,23 @@ export function normalizeLiturgicalDay(raw: unknown, prayerBook: string): Liturg
   };
 }
 
+export interface CalendarMonthDay {
+  date: string;
+  color?: string;
+  celebration?: string | null;
+  week?: string | null;
+}
+
+export function normalizeCalendarMonth(raw: unknown): CalendarMonthDay[] {
+  const days = (Array.isArray(raw) ? raw : []) as Raw[];
+  return days.map((day) => ({
+    date: String(day.date ?? ""),
+    color: day.color as string | undefined,
+    celebration: (day.celebration_name as string | null | undefined) ?? null,
+    week: (day.week_name as string | null | undefined) ?? null,
+  }));
+}
+
 function emptyToUndefined(value: unknown): unknown {
   if (value == null) return undefined;
   if (typeof value === "object" && Object.keys(value as object).length === 0) return undefined;

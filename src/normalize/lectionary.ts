@@ -24,6 +24,27 @@ export function normalizeReadings(leituras: Raw): Readings {
   };
 }
 
+export interface LectionaryCycle {
+  year: number;
+  sundayCycle?: string;
+  weekdayCycle?: string;
+  description?: { sunday?: string; weekday?: string };
+}
+
+export function normalizeCycleInfo(raw: unknown): LectionaryCycle {
+  const cycle = raw as Raw;
+  const descricao = (cycle.descricao ?? {}) as Raw;
+  return {
+    year: Number(cycle.ano),
+    sundayCycle: cycle.ciclo_dominical as string | undefined,
+    weekdayCycle: cycle.ciclo_semanal as string | undefined,
+    description: {
+      sunday: descricao.dominical as string | undefined,
+      weekday: descricao.semanal as string | undefined,
+    },
+  };
+}
+
 function normalizeReading(raw: unknown): Reading | undefined {
   if (raw == null) return undefined;
   const reading = raw as Raw;

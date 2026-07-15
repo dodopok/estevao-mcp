@@ -57,6 +57,61 @@ export class EstevaoApi {
     return this.http.get(family ? `${base}/family` : base, preferenceParams(prefs));
   }
 
+  getCalendarMonth(year: number, month: number, prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/calendar/${year}/${month}`, preferenceParams(prefs));
+  }
+
+  getYearOverview(year: number, prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/calendar/${year}/overview`, preferenceParams(prefs));
+  }
+
+  getYearSeasons(year: number, prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/calendar/${year}/seasons`, preferenceParams(prefs));
+  }
+
+  getYearKeyDates(year: number, prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/calendar/${year}/key_dates`, preferenceParams(prefs));
+  }
+
+  getYearCelebrations(
+    year: number,
+    prefs: Preferences,
+    options: { type?: string; grouped?: boolean } = {},
+  ): Promise<unknown> {
+    return this.http.get(`/api/v1/calendar/${year}/celebrations`, {
+      type: options.type,
+      grouped: options.grouped,
+      ...preferenceParams(prefs),
+    });
+  }
+
+  listCelebrations(
+    prefs: Preferences,
+    options: { type?: string; movable?: boolean } = {},
+  ): Promise<unknown> {
+    return this.http.get(`/api/v1/celebrations`, {
+      type: options.type,
+      movable: options.movable,
+      ...preferenceParams(prefs),
+    });
+  }
+
+  getCelebrationTypes(): Promise<unknown> {
+    return this.http.get(`/api/v1/celebrations/types`);
+  }
+
+  getCelebration(id: number | string, prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/celebrations/${id}`, preferenceParams(prefs));
+  }
+
+  getCelebrationByDate(month: number, day: number, prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/celebrations/date/${month}/${day}`, preferenceParams(prefs));
+  }
+
+  getLectionaryCycle(year: number): Promise<unknown> {
+    return this.http.get(`/api/v1/lectionary/cycle/${year}`);
+  }
+
   searchCelebrations(query: string, prefs: Preferences): Promise<unknown> {
     return this.http.get(`/api/v1/celebrations/search`, {
       q: query,
