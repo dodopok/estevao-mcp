@@ -45,6 +45,35 @@ Or in `.mcp.json` / Claude Desktop config:
 | `ESTEVAO_DEFAULT_PRAYER_BOOK` | `loc_2015` | Default prayer book code |
 | `ESTEVAO_TIMEZONE` | system | IANA timezone used to resolve `today` |
 
+## Remote server (Streamable HTTP)
+
+The same server can run as a remote MCP endpoint (`POST /mcp`, stateless Streamable HTTP):
+
+```bash
+npm run build && node dist/http.js          # or: docker build -t estevao-mcp . && docker run -p 3333:3333 estevao-mcp
+```
+
+Two auth modes, chosen by env:
+
+- **Passthrough** (default, multi-tenant): don't set `ESTEVAO_API_KEY` on the server. Each client sends its own key in the `X-API-Key` header (or `Authorization: Bearer estevao_…`).
+- **Single-key** (personal deployment): set `ESTEVAO_API_KEY` on the server. Optionally set `ESTEVAO_MCP_TOKEN` to require `Authorization: Bearer <token>` from clients.
+
+Extra env: `PORT` (default 3333), `ESTEVAO_MCP_ALLOWED_HOSTS` (comma-separated; enables DNS-rebinding protection). `GET /healthz` reports the mode.
+
+Client config for a remote deployment:
+
+```json
+{
+  "mcpServers": {
+    "estevao": {
+      "type": "http",
+      "url": "https://<your-host>/mcp",
+      "headers": { "X-API-Key": "estevao_your_key" }
+    }
+  }
+}
+```
+
 ## Development
 
 ```bash
@@ -59,10 +88,15 @@ SMOKE_KEY=estevao_… npx tsx scripts/smoke.ts
 
 Editorial note: this server intentionally exposes only factual liturgical data and document assembly. It does not (and will not) ship prompts that generate sermons, homilies or devotional reflections.
 
-## Roadmap
+## Full surface
 
-- **Phase 2** — remaining tools (`compare_prayer_books`, calendar month/year, celebrations browse), MCP resources (`ordo://day/{date}`, `ordo://office/{date}/{type}`), factual prompts (`build_liturgy_sheet`, `explain_feast`, `compare_traditions`), structured `outputSchema`.
-- **Phase 3** — Streamable HTTP transport (remote deployment), Dockerfile, publication to the MCP registry.
+- **11 tools**: `get_liturgical_day`, `get_calendar_month`, `get_year_overview`, `get_readings`, `get_lectionary_cycle`, `get_daily_office`, `search_celebrations`, `list_celebrations`, `get_celebration`, `list_prayer_books`, `compare_prayer_books`.
+- **Resources**: `ordo://prayer-books`, `ordo://bible-versions`, `ordo://today`, and templates `ordo://day/{date}`, `ordo://office/{date}/{office_type}` (markdown), `ordo://calendar/{year}/key-dates`.
+- **Prompts** (factual only): `build_liturgy_sheet`, `explain_feast`, `compare_traditions`.
+
+## Releasing
+
+Tag `vX.Y.Z` → GitHub Actions publishes to npm (provenance) and to the [MCP registry](https://registry.modelcontextprotocol.io) via `mcp-publisher` (GitHub OIDC). Requires the `NPM_TOKEN` repo secret and matching versions in `package.json` and `server.json`.
 
 ## License
 
