@@ -1,0 +1,15 @@
+{
+  "name": "estevao",
+  "description": "Anglican liturgical calendar, lectionary and Daily Office via the hosted Estêvão MCP server.",
+  "version": "0.1.0",
+  "author": { "name": "Caminho Anglicano" },
+  "homepage": "https://estevao.caminhoanglicano.com.br/mcp",
+  "repository": "https://github.com/dodopok/estevao-mcp",
+  "license": "MIT",
+  "mcpServers": {
+    "estevao": {
+      "type": "http",
+      "url": "https://mcp.caminhoanglicano.com.br/mcp"
+    }
+  }
+}
