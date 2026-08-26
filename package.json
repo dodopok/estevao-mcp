@@ -1,6 +1,6 @@
 {
   "name": "estevao-mcp",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "MCP server for the Estêvão API — Anglican liturgical calendar, lectionary and Daily Office (Book of Common Prayer / Livro de Oração Comum)",
   "mcpName": "io.github.dodopok/estevao-mcp",
   "type": "module",
