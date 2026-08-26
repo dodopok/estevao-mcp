@@ -227,16 +227,28 @@ Interoperability details that make this work across clients:
 Extra env: `PORT` (default 3333), `ESTEVAO_MCP_ALLOWED_HOSTS` (comma-separated; enables
 DNS-rebinding protection).
 
-## Claude Code plugin
+## Plugin para Codex, Claude e outros clientes
 
-The repository doubles as a Claude Code plugin marketplace:
+O repositório inclui um pacote universal em [`plugins/estevao`](plugins/estevao), com manifests
+para Codex e Claude Code e uma configuração MCP compartilhada. O pacote aponta para o servidor
+hospedado, então a conexão usa OAuth e não exige copiar uma API key.
+
+Para Claude Code:
 
 ```
 /plugin marketplace add dodopok/estevao-mcp
 /plugin install estevao@estevao
 ```
 
-The plugin wires up the hosted OAuth server, so installing it is the whole setup.
+Para Codex CLI:
+
+```bash
+codex mcp add estevao --url https://mcp.caminhoanglicano.com.br/mcp
+codex mcp login estevao
+```
+
+Veja o guia visual de integração no [portal do desenvolvedor](https://estevao.caminhoanglicano.com.br/docs/mcp).
+O mesmo endpoint funciona em qualquer cliente MCP compatível com Streamable HTTP e OAuth 2.1.
 
 ## Development
 

@@ -1,0 +1,38 @@
+{
+  "name": "estevao",
+  "version": "0.3.0+codex.20260826132228",
+  "description": "Anglican liturgical calendar, lectionary and Daily Office via the hosted Est\u00eav\u00e3o MCP server.",
+  "author": {
+    "name": "Caminho Anglicano",
+    "url": "https://github.com/dodopok"
+  },
+  "homepage": "https://estevao.caminhoanglicano.com.br/docs/mcp",
+  "repository": "https://github.com/dodopok/estevao-mcp",
+  "license": "MIT",
+  "keywords": [
+    "anglican",
+    "liturgy",
+    "lectionary",
+    "book-of-common-prayer",
+    "daily-office",
+    "liturgical-calendar"
+  ],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Est\u00eav\u00e3o",
+    "shortDescription": "Calend\u00e1rio, lecion\u00e1rio e Of\u00edcio Di\u00e1rio anglicanos",
+    "longDescription": "Dados lit\u00fargicos anglicanos precisos: calend\u00e1rio com regras de preced\u00eancia, leituras do lecion\u00e1rio e Of\u00edcio Di\u00e1rio completo em v\u00e1rias edi\u00e7\u00f5es do Livro de Ora\u00e7\u00e3o Comum. As ferramentas s\u00e3o somente leitura e o acesso usa OAuth no servidor hospedado.",
+    "developerName": "Caminho Anglicano",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://estevao.caminhoanglicano.com.br",
+    "defaultPrompt": [
+      "Quais s\u00e3o as leituras do pr\u00f3ximo domingo?",
+      "Monte as Completas de hoje.",
+      "Compare o Natal nos livros de ora\u00e7\u00e3o 1662 e 2019."
+    ],
+    "brandColor": "#00416A"
+  }
+}

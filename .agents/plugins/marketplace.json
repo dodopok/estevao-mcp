@@ -1,0 +1,20 @@
+{
+  "name": "estevao-local",
+  "interface": {
+    "displayName": "Estêvão (local)"
+  },
+  "plugins": [
+    {
+      "name": "estevao",
+      "source": {
+        "source": "local",
+        "path": "./plugins/estevao"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
