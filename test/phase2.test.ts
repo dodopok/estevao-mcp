@@ -163,6 +163,7 @@ describe("resources", () => {
     expect(templates).toEqual([
       "ordo://calendar/{year}/key-dates",
       "ordo://day/{date}",
+      "ordo://explain/{date}",
       "ordo://office/{date}/{office_type}",
     ]);
   });
@@ -188,7 +189,7 @@ describe("prompts", () => {
     const client = await connectedClient();
     const { prompts } = await client.listPrompts();
     const names = prompts.map((p) => p.name).sort();
-    expect(names).toEqual(["build_liturgy_sheet", "compare_traditions", "explain_feast"]);
+    expect(names).toEqual(["build_liturgy_sheet", "compare_traditions", "explain_feast", "explain_why"]);
     expect(names.join(",")).not.toMatch(/sermon|devotional|homil/i);
   });
 
@@ -244,6 +245,30 @@ describe("api surface added after the first release", () => {
     });
     const schema = JSON.parse(firstText(result));
     expect(schema.categories[0].preferences[0].key).toBe("psalm_translation");
+    // Office-level options come from a second endpoint and are merged in.
+    expect(schema.officeOptions.office_types).toContain("compline");
+    expect(schema.officeOptions.creed_types).toContain("nicene");
+  });
+
+  it("exposes the decision trail as a resource", async () => {
+    const client = await connectedClient();
+    const { contents } = await client.readResource({ uri: "ordo://explain/2026-07-14" });
+    const trail = JSON.parse((contents[0] as { text: string }).text);
+    expect(trail.color.reason).toBe("season_default");
+  });
+
+  it("offers a prompt that answers 'why' from the trail", async () => {
+    const client = await connectedClient();
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name)).toContain("explain_why");
+
+    const prompt = await client.getPrompt({
+      name: "explain_why",
+      arguments: { date: "2026-07-14", question: "why this psalm" },
+    });
+    const text = (prompt.messages[0].content as { text: string }).text;
+    expect(text).toContain("explain_liturgical_day");
+    expect(text).toContain("rather than filling the gap");
   });
 
   it("accepts prayer books added to the API after this server was written", async () => {

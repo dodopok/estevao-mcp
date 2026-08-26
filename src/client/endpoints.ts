@@ -137,6 +137,11 @@ export class EstevaoApi {
     );
   }
 
+  /** Office-level option sets (office types, creeds, confessions, languages). */
+  getDailyOfficePreferences(prefs: Preferences): Promise<unknown> {
+    return this.http.get(`/api/v1/daily_office/preferences`, preferenceParams(prefs));
+  }
+
   /** Preference categories a prayer book accepts, with allowed values. */
   getPrayerBookPreferences(code: string): Promise<unknown> {
     return this.http.get(`/api/v1/prayer_books/${code}/preferences`);

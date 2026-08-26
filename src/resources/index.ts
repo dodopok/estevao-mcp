@@ -6,6 +6,7 @@ import { cached, TTL_IMMUTABLE, TTL_METADATA } from "../cache/lru.js";
 import { normalizeLiturgicalDay } from "../normalize/calendar.js";
 import { normalizePrayerBooks } from "../normalize/prayerBooks.js";
 import { normalizeDailyOffice } from "../normalize/dailyOffice.js";
+import { normalizeExplanation } from "../normalize/explanation.js";
 import { renderOfficeMarkdown } from "../format/markdown.js";
 
 const OFFICE_TYPES = ["morning", "midday", "evening", "compline", "late_evening"];
@@ -101,6 +102,28 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
           },
         ],
       };
+    },
+  );
+
+  server.registerResource(
+    "explain",
+    new ResourceTemplate("ordo://explain/{date}", { list: undefined }),
+    {
+      title: "Why a liturgical day resolved this way",
+      description:
+        "The decision trail for a date (YYYY-MM-DD or \"today\"): precedence, transfers, how the " +
+        "colour was decided and which rule picked each reading. Attach it to a conversation to " +
+        "reason about a day without spending a tool call.",
+      mimeType: "application/json",
+    },
+    async (uri, variables) => {
+      const date = resolveDate(String(variables.date), ctx.config.timezone);
+      const prefs = buildPreferences(ctx, {});
+      const key = `explain:${toIso(date)}:-:-:${JSON.stringify(prefs)}`;
+      const explanation = await cached(key, TTL_IMMUTABLE, async () =>
+        normalizeExplanation(await ctx.api.getLiturgicalExplanation(date, prefs)),
+      );
+      return jsonContents(uri.href, explanation);
     },
   );
 
