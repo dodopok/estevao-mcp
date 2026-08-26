@@ -696,3 +696,31 @@ describe("Firebase sign-in helper proxy", () => {
     }
   });
 });
+
+describe("diagnostics", () => {
+  it("accepts sign-in beacons from the consent screen", async () => {
+    const { origin, server } = await start();
+    try {
+      const response = await fetch(`${origin}/oauth/diagnostics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request: "abc", stage: "redirect-error", code: "auth/internal-error" }),
+      });
+      expect(response.status).toBe(204);
+    } finally {
+      server.close();
+    }
+  });
+
+  it("trusts the edge proxy so rate limits are keyed per client", async () => {
+    const port = await reservePort();
+    const app = await createApp({
+      baseUrl: API_BASE,
+      defaultPrayerBook: "loc_2015",
+      upstreamFetch: upstream().fetch,
+      auth: authEnv(port),
+      store: new MemoryOAuthStore(),
+    });
+    expect(app.get("trust proxy")).toBe(1);
+  });
+});

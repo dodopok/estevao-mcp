@@ -119,6 +119,7 @@ The mode is chosen by environment, and resolved per request in this order:
 | `ESTEVAO_PORTAL_URL` | no | Developer portal link shown on the consent screen |
 | `MCP_ALLOW_CLIENT_ID_METADATA_DOCUMENTS` | no | Accept URL-shaped `client_id`s (default `true`) |
 | `MCP_FIREBASE_AUTH_PROXY` | no | Serve Firebase's sign-in helper from this origin (default `true`, see below) |
+| `MCP_TRUST_PROXY` | no | Express `trust proxy` (default `1`, one edge hop). Rate limits key off the real client IP |
 
 Setting only some of these is a configuration error and the server refuses to start, rather
 than silently falling back to key-only mode. The Postgres schema is created on boot.
@@ -140,6 +141,22 @@ Two one-time console steps make this work:
    Firebase: add `https://<mcp host>/__/auth/handler` to *Authorized redirect URIs*.
 
 Set `MCP_FIREBASE_AUTH_PROXY=false` to go back to the stock cross-origin behaviour.
+
+#### Diagnosing a failed sign-in
+
+Sign-in runs in the user's browser, so a failure there reaches no log by itself. The consent
+screen posts beacons to `/oauth/diagnostics`, which the server writes to stderr:
+
+```
+[consent] rendered request=… client=Claude
+[consent] stage=loaded pending=false storage=true ua=…
+[consent] stage=redirect-start request=… ua=…
+[consent] stage=redirect-lost request=… ua=…     ← came back from Google, state was lost
+[consent] stage=redirect-error code=auth/…       ← Firebase rejected the sign-in
+[consent] approve failed request=… error=…       ← sign-in worked, key provisioning did not
+```
+
+Only error codes and flags are reported — never tokens or credentials.
 
 Endpoints: `/.well-known/oauth-protected-resource` (also under `/mcp`),
 `/.well-known/oauth-authorization-server`, `/authorize`, `/token`, `/register`, `/revoke`,

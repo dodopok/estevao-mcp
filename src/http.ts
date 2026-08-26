@@ -33,6 +33,8 @@ export interface HttpEnv {
   auth?: AuthEnv;
   /** Accept raw `X-API-Key` credentials even when OAuth is enabled. */
   allowApiKeyHeader?: boolean;
+  /** Express `trust proxy` setting; defaults to one hop (Railway's edge). */
+  trustProxy?: number | boolean | string;
   /** Test seam: fetch implementation used for upstream Estêvão API calls. */
   upstreamFetch?: typeof fetch;
   /** Test seam: override the OAuth store (defaults to Postgres, or memory without DATABASE_URL). */
@@ -58,7 +60,17 @@ export function loadHttpEnv(env: NodeJS.ProcessEnv = process.env): HttpEnv {
       .filter(Boolean),
     auth: loadAuthEnv(env),
     allowApiKeyHeader: env.ESTEVAO_MCP_ALLOW_API_KEY_HEADER !== "false",
+    trustProxy: parseTrustProxy(env.MCP_TRUST_PROXY),
   };
+}
+
+/** `false`/`true`, a hop count, or a comma-separated list of trusted addresses. */
+function parseTrustProxy(value: string | undefined): number | boolean | string | undefined {
+  const raw = value?.trim();
+  if (!raw) return undefined;
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return /^\d+$/.test(raw) ? Number(raw) : raw;
 }
 
 export interface AuthRuntime {
@@ -79,6 +91,10 @@ export interface AuthRuntime {
  */
 export async function createApp(env: HttpEnv): Promise<express.Express> {
   const app = express();
+  // Behind Railway (and any other edge), the client IP only arrives in X-Forwarded-For.
+  // Without this, every visitor shares one rate-limit bucket and express-rate-limit
+  // floods the logs with validation errors.
+  app.set("trust proxy", env.trustProxy ?? 1);
   // Browser-based clients (web connectors, the MCP Inspector) need this before anything else.
   app.use(corsMiddleware);
   const runtime = await createAuthRuntime(env);
