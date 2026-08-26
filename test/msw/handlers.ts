@@ -112,6 +112,15 @@ export const handlers = [
     });
   }),
 
+  http.get(`${BASE_URL}/api/v1/daily_office/preferences`, () =>
+    HttpResponse.json({
+      versions: ["loc_2015", "loc_1662_en"],
+      languages: ["pt-BR", "en", "cy"],
+      office_types: ["morning", "evening", "compline"],
+      creed_types: ["apostles", "nicene"],
+    }),
+  ),
+
   // metadata
   http.get(`${BASE_URL}/api/v1/prayer_books/:code/preferences`, ({ params }) =>
     HttpResponse.json({

@@ -55,14 +55,14 @@ Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optiona
 | `list_celebrations` | Browse the sanctoral calendar with filters (type, movable, year) |
 | `get_celebration` | One celebration in detail: transfer rules, calculation, collects, readings |
 | `list_prayer_books` | Available prayer books (20+ editions, pt-BR/en/es/cy) and Bible versions |
-| `get_prayer_book_preferences` | Which preferences a book accepts, with allowed values (psalm translation, canticles, cycles) |
+| `get_prayer_book_preferences` | Which preferences a book accepts (psalm translation, canticles, cycles) plus its office-level options |
 | `explain_liturgical_day` | The reasoning behind a date: precedence, transfers, colour and how each reading was chosen |
 | `compare_prayer_books` | Side-by-side comparison of 2–4 prayer books for the same day or office |
 
 ## Resources & prompts
 
-- **Resources**: `ordo://prayer-books`, `ordo://bible-versions`, `ordo://today`, plus templates `ordo://day/{date}`, `ordo://office/{date}/{office_type}` (markdown) and `ordo://calendar/{year}/key-dates`.
-- **Prompts** (strictly factual): `build_liturgy_sheet` (print-ready boletim), `explain_feast` (history, precedence, color), `compare_traditions` (side-by-side across editions).
+- **Resources**: `ordo://prayer-books`, `ordo://bible-versions`, `ordo://today`, plus templates `ordo://day/{date}`, `ordo://explain/{date}` (the decision trail), `ordo://office/{date}/{office_type}` (markdown) and `ordo://calendar/{year}/key-dates`.
+- **Prompts** (strictly factual): `build_liturgy_sheet` (print-ready boletim), `explain_feast` (history, precedence, color), `explain_why` (why this reading/saint/colour, answered from the engine's decision trail rather than inferred), `compare_traditions` (side-by-side across editions).
 
 > **Editorial note:** this server intentionally exposes only factual liturgical data and faithful document assembly. It does not (and will not) ship prompts that generate sermons, homilies or devotional reflections.
 

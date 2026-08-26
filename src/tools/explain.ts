@@ -66,18 +66,25 @@ export function registerExplanationTools(server: McpServer, ctx: ServerContext):
       description:
         "Which preferences a prayer book accepts, with their allowed values — psalm translation " +
         "(e.g. Coverdale for the English books), psalm cycles, canticle and opening-sentence choices, " +
-        "family-rite options. Call this before passing `preferences` to the other tools: the keys and " +
-        "values differ from book to book.",
+        "family-rite options — plus the office-level options for that book: which offices it actually " +
+        "has, creed and confession forms, and available Bible versions. Call this before passing " +
+        "`preferences` to the other tools: the keys and values differ from book to book.",
       inputSchema: {
         prayer_book: z.string().describe("Prayer book code, e.g. loc_1662_en"),
       },
       annotations: readOnly,
     },
     safeHandler(async (args) => {
-      const preferences = await cached(`preferences:${args.prayer_book}`, TTL_METADATA, async () =>
-        (await ctx.api.getPrayerBookPreferences(args.prayer_book)) as object,
-      );
-      return jsonResult(preferences);
+      const prefs = buildPreferences(ctx, { prayer_book: args.prayer_book });
+      const result = await cached(`preferences:${args.prayer_book}`, TTL_METADATA, async () => {
+        const [book, office] = await Promise.all([
+          ctx.api.getPrayerBookPreferences(args.prayer_book) as Promise<object>,
+          // Office-level options are a separate endpoint; a book without them is not an error.
+          ctx.api.getDailyOfficePreferences(prefs).catch(() => undefined) as Promise<object | undefined>,
+        ]);
+        return office ? { ...book, officeOptions: office } : book;
+      });
+      return jsonResult(result);
     }),
   );
 }

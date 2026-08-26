@@ -105,4 +105,43 @@ export function registerPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "explain_why",
+    {
+      title: "Explain why a day resolved this way",
+      description:
+        "Answers 'why this reading / this saint / this colour' from the engine's own decision trail, " +
+        "instead of inferring a plausible reason from the result.",
+      argsSchema: {
+        date: z.string().optional().describe('YYYY-MM-DD, "today" or "next-sunday" (default today)'),
+        question: z
+          .string()
+          .optional()
+          .describe('What specifically to explain, e.g. "why this psalm" or "why not St James"'),
+        prayer_book: z.string().optional().describe("Prayer book code (default loc_2015)"),
+      },
+    },
+    ({ date, question, prayer_book }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Explain ${question ? `\u201c${question}\u201d` : "how the liturgy resolved"} for ` +
+              `${date ?? "today"}${prayer_book ? ` in prayer book ${prayer_book}` : ""}.\n\n` +
+              `1. Call explain_liturgical_day for that date${prayer_book ? ` with prayer_book=${prayer_book}` : ""}. ` +
+              `It returns the actual decision trail: precedence between celebrations, transfers, how the colour ` +
+              `was decided, which lectionary rule and table chose each reading, and where the psalm came from.\n` +
+              `2. Answer using that trail. Name the rule that decided each thing, and say plainly when the trail ` +
+              `does not explain something rather than filling the gap with a plausible reason.\n` +
+              `3. If a competing celebration was outranked or transferred, say which one, to where, and under ` +
+              `which rule.\n` +
+              `4. Stay factual: this explains calendar and lectionary mechanics, not devotional meaning.`,
+          },
+        },
+      ],
+    }),
+  );
 }
