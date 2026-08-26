@@ -11,8 +11,11 @@ MCP (Model Context Protocol) server for the [Estêvão API](https://github.com/d
 **Hosted (no key to manage)** — sign in with your Google/e-mail account when the browser opens:
 
 ```bash
-claude mcp add --transport http estevao https://mcp.caminhoanglicano.com.br/mcp
+claude mcp add --transport http estevao https://mcp.caminhoanglicano.com.br/mcp   # Claude Code
+codex mcp add estevao --url https://mcp.caminhoanglicano.com.br/mcp               # Codex CLI
 ```
+
+Other clients: see [Connecting any MCP client](#connecting-any-mcp-client).
 
 **Local (stdio)** — you need an Estêvão API key (`estevao_…`):
 
@@ -127,6 +130,39 @@ Security properties: PKCE `S256` is mandatory, authorization codes are single-us
 60s, refresh tokens rotate on use, access tokens are opaque and stored only as digests, tokens
 are bound to this server's resource identifier (RFC 8707) and rejected otherwise, and the
 Estêvão API key is AES-256-GCM encrypted at rest.
+
+### Connecting any MCP client
+
+The endpoint is standard Streamable HTTP with OAuth 2.1 discovery, so any spec-compliant
+client can connect. Concretely:
+
+| Client | How |
+|---|---|
+| **Claude Code** | `claude mcp add --transport http estevao https://mcp.caminhoanglicano.com.br/mcp` |
+| **Claude Code plugin** | `/plugin marketplace add dodopok/estevao-mcp` then `/plugin install estevao@estevao` |
+| **Claude Desktop / claude.ai** | Settings → Connectors → Add custom connector → paste the URL |
+| **Codex CLI** | `codex mcp add estevao --url …/mcp` then `codex mcp login estevao` |
+| **Gemini CLI** | `~/.gemini/settings.json`: `{"mcpServers":{"estevao":{"httpUrl":"…/mcp","oauth":{"enabled":true}}}}` |
+| **VS Code / Cursor / Windsurf** | Add an MCP server of type `http` with the URL; the editor runs the OAuth flow |
+| **MCP Inspector** | `npx @modelcontextprotocol/inspector`, transport "Streamable HTTP", paste the URL |
+| **Anything else** | `{"type":"http","url":"https://mcp.caminhoanglicano.com.br/mcp"}` |
+
+Interoperability details that make this work across clients:
+
+- **Discovery everywhere clients look.** Protected resource metadata is served both at the root
+  and under `/mcp`; authorization server metadata is served at
+  `/.well-known/oauth-authorization-server`, its `/mcp` path-inserted variant, and both
+  OpenID Connect discovery spellings.
+- **Registration.** Dynamic Client Registration (RFC 7591) *and* Client ID Metadata Documents
+  are both accepted; clients that pre-register a `client_id` work too.
+- **Client authentication.** `none` (public clients, the common case) and both
+  `client_secret_post` and `client_secret_basic` for confidential ones.
+- **Scopes.** There is one read-only scope, `liturgy:read`. Clients that ask for unrelated
+  scopes (`openid profile`, `mcp`, or nothing) still get a working connection.
+- **CORS.** Preflight is answered and `WWW-Authenticate` is exposed, so browser-based clients
+  can read the challenge and start the flow.
+- **Probes.** Unauthenticated `GET`/`DELETE` on `/mcp` return the auth challenge rather than a
+  bare 405, so clients that probe before authenticating still discover the flow.
 
 ### Client config for a key-based deployment
 

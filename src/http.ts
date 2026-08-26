@@ -14,6 +14,7 @@ import { MemoryOAuthStore } from "./auth/memoryStore.js";
 import { PostgresOAuthStore } from "./auth/postgresStore.js";
 import { EstevaoOAuthProvider, LITURGY_SCOPE } from "./auth/provider.js";
 import { createAuthRouter } from "./auth/router.js";
+import { corsMiddleware } from "./auth/cors.js";
 import type { OAuthStore } from "./auth/store.js";
 
 const KEY_FORMAT = /^estevao_[0-9a-f]{48}$/;
@@ -78,6 +79,8 @@ export interface AuthRuntime {
  */
 export async function createApp(env: HttpEnv): Promise<express.Express> {
   const app = express();
+  // Browser-based clients (web connectors, the MCP Inspector) need this before anything else.
+  app.use(corsMiddleware);
   const runtime = await createAuthRuntime(env);
 
   if (runtime) {
@@ -162,8 +165,14 @@ export async function createApp(env: HttpEnv): Promise<express.Express> {
     }
   });
 
-  // Stateless mode: no SSE resumption stream, no sessions to delete.
-  const methodNotAllowed = (_req: Request, res: Response) => {
+  // Stateless mode: no SSE resumption stream, no sessions to delete. Clients that probe
+  // with GET/DELETE before authenticating still get the auth challenge, so their OAuth
+  // flow starts instead of dead-ending on a 405.
+  const methodNotAllowed = (req: Request, res: Response) => {
+    if (runtime && !extractApiKey(req) && !env.apiKey) {
+      challengeUnauthorized(res, runtime);
+      return;
+    }
     res.status(405).json(jsonRpcError(-32000, "Method not allowed (stateless server)"));
   };
   app.get("/mcp", methodNotAllowed);
@@ -244,13 +253,7 @@ async function resolveCredentials(
   }
 
   if (runtime) {
-    res
-      .status(401)
-      .set(
-        "WWW-Authenticate",
-        `Bearer error="invalid_token", scope="${LITURGY_SCOPE}", resource_metadata="${getOAuthProtectedResourceMetadataUrl(runtime.config.resource)}"`,
-      )
-      .json(jsonRpcError(-32001, "Authorization required."));
+    challengeUnauthorized(res, runtime);
     return undefined;
   }
 
@@ -263,6 +266,17 @@ async function resolveCredentials(
       ),
     );
   return undefined;
+}
+
+/** RFC 9728 challenge: tells the client where to find this server's auth metadata. */
+function challengeUnauthorized(res: Response, runtime: AuthRuntime): void {
+  res
+    .status(401)
+    .set(
+      "WWW-Authenticate",
+      `Bearer error="invalid_token", scope="${LITURGY_SCOPE}", resource_metadata="${getOAuthProtectedResourceMetadataUrl(runtime.config.resource)}"`,
+    )
+    .json(jsonRpcError(-32001, "Authorization required."));
 }
 
 function extractApiKey(req: Request): string | undefined {

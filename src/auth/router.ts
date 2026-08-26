@@ -25,12 +25,23 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
   const router = express.Router();
   const oauthMetadata = createOAuthMetadata({ provider, issuerUrl: issuer, scopesSupported: [LITURGY_SCOPE] });
 
+  const metadataDocument = { ...oauthMetadata, client_id_metadata_document_supported: true };
+  const serveMetadata = (_req: Request, res: Response) => {
+    cors(res);
+    res.json(metadataDocument);
+  };
+
   // Mounted before the SDK router so we can advertise Client ID Metadata Document
   // support, which the SDK's metadata document does not know about yet.
-  router.get("/.well-known/oauth-authorization-server", (_req, res) => {
-    cors(res);
-    res.json({ ...oauthMetadata, client_id_metadata_document_supported: true });
-  });
+  //
+  // Clients disagree on where to look: some append the resource path to the well-known
+  // URI (RFC 8414 path insertion), and some only implement OpenID Connect discovery.
+  // Serving all four spellings is what makes Claude, Codex, Gemini CLI, VS Code and
+  // browser connectors all discover the same document.
+  router.get("/.well-known/oauth-authorization-server", serveMetadata);
+  router.get("/.well-known/oauth-authorization-server/mcp", serveMetadata);
+  router.get("/.well-known/openid-configuration", serveMetadata);
+  router.get("/.well-known/openid-configuration/mcp", serveMetadata);
 
   // The SDK serves protected resource metadata at the path-specific URL only; clients
   // are allowed to probe the root one too, so serve both.
@@ -45,6 +56,10 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
       resource_documentation: options.docsUrl,
     });
   });
+
+  // Some clients authenticate at the token endpoint with HTTP Basic instead of form
+  // fields. Normalise it before the SDK handler, which only reads the body.
+  router.use("/token", express.urlencoded({ extended: false }), basicClientAuth);
 
   router.use(
     mcpAuthRouter({
@@ -109,6 +124,23 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
   });
 
   return router;
+}
+
+/** Moves `Authorization: Basic <client_id:client_secret>` into the form body. */
+function basicClientAuth(req: Request, _res: Response, next: () => void): void {
+  const header = req.headers.authorization;
+  if (!header?.toLowerCase().startsWith("basic ") || req.body?.client_id) {
+    next();
+    return;
+  }
+  const decoded = Buffer.from(header.slice(6).trim(), "base64").toString("utf8");
+  const separator = decoded.indexOf(":");
+  if (separator > 0) {
+    req.body = req.body ?? {};
+    req.body.client_id = decodeURIComponent(decoded.slice(0, separator));
+    req.body.client_secret = decodeURIComponent(decoded.slice(separator + 1));
+  }
+  next();
 }
 
 function respondWithConsentError(res: Response, err: unknown): void {

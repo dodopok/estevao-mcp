@@ -503,3 +503,150 @@ describe("OAuth hardening", () => {
     }
   });
 });
+
+describe("client compatibility", () => {
+  it("answers CORS preflight so browser-based clients can connect", async () => {
+    const { origin, server } = await start();
+    try {
+      const response = await fetch(`${origin}/mcp`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://claude.ai",
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "authorization, content-type, mcp-protocol-version",
+        },
+      });
+      expect(response.status).toBe(204);
+      expect(response.headers.get("access-control-allow-origin")).toBe("https://claude.ai");
+      const allowed = response.headers.get("access-control-allow-headers")!.toLowerCase();
+      expect(allowed).toContain("authorization");
+      expect(allowed).toContain("mcp-protocol-version");
+    } finally {
+      server.close();
+    }
+  });
+
+  it("exposes the auth challenge to browser JavaScript", async () => {
+    const { origin, server } = await start();
+    try {
+      const response = await fetch(`${origin}/mcp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "https://claude.ai" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+      });
+      expect(response.status).toBe(401);
+      expect(response.headers.get("access-control-expose-headers")!.toLowerCase()).toContain(
+        "www-authenticate",
+      );
+    } finally {
+      server.close();
+    }
+  });
+
+  it("challenges unauthenticated GET probes instead of dead-ending on 405", async () => {
+    const { origin, server } = await start();
+    try {
+      const response = await fetch(`${origin}/mcp`, { headers: { Accept: "text/event-stream" } });
+      expect(response.status).toBe(401);
+      expect(response.headers.get("www-authenticate")).toContain("resource_metadata=");
+    } finally {
+      server.close();
+    }
+  });
+
+  it("serves the same authorization server metadata at every spelling clients probe", async () => {
+    const { origin, server } = await start();
+    try {
+      const paths = [
+        "/.well-known/oauth-authorization-server",
+        "/.well-known/oauth-authorization-server/mcp",
+        "/.well-known/openid-configuration",
+        "/.well-known/openid-configuration/mcp",
+      ];
+      const documents = await Promise.all(
+        paths.map(async (path) => {
+          const response = await fetch(`${origin}${path}`);
+          expect(response.status, path).toBe(200);
+          return response.json() as Promise<Record<string, any>>;
+        }),
+      );
+      for (const document of documents) {
+        expect(document.token_endpoint).toBe(`${origin}/token`);
+        expect(document.code_challenge_methods_supported).toEqual(["S256"]);
+      }
+    } finally {
+      server.close();
+    }
+  });
+
+  it("grants the read scope even when a client asks for unrelated scopes", async () => {
+    const { origin, server } = await start();
+    try {
+      const clientId = await registerClient(origin);
+      const { verifier, challenge } = pkce();
+      const authorizeResponse = await authorize(origin, clientId, challenge, {
+        scope: "openid profile email",
+      });
+      expect(authorizeResponse.status).toBe(302);
+      const requestId = new URL(authorizeResponse.headers.get("location")!).searchParams.get("request")!;
+      const approval = await fetch(`${origin}/oauth/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request: requestId, id_token: "valid-id-token" }),
+      });
+      const code = new URL(((await approval.json()) as { redirect_to: string }).redirect_to)
+        .searchParams.get("code")!;
+      const tokens = (await (await exchangeCode(origin, clientId, code, verifier)).json()) as {
+        scope: string;
+      };
+      expect(tokens.scope).toBe("liturgy:read");
+    } finally {
+      server.close();
+    }
+  });
+
+  it("accepts HTTP Basic client authentication at the token endpoint", async () => {
+    const { origin, server } = await start();
+    try {
+      // A confidential client: registering without token_endpoint_auth_method: none
+      // makes the server issue a client secret.
+      const registration = (await (
+        await fetch(`${origin}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_name: "Confidential Client",
+            redirect_uris: [CLIENT_REDIRECT],
+            grant_types: ["authorization_code", "refresh_token"],
+            response_types: ["code"],
+            token_endpoint_auth_method: "client_secret_basic",
+          }),
+        })
+      ).json()) as { client_id: string; client_secret: string };
+
+      const { verifier, challenge } = pkce();
+      const { code } = await grantCode(origin, registration.client_id, challenge);
+      const basic = Buffer.from(
+        `${registration.client_id}:${registration.client_secret}`,
+      ).toString("base64");
+
+      const response = await fetch(`${origin}/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${basic}`,
+        },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          code,
+          code_verifier: verifier,
+          redirect_uri: CLIENT_REDIRECT,
+        }),
+      });
+      expect(response.status).toBe(200);
+      expect(((await response.json()) as { access_token: string }).access_token).toMatch(/^emcp_at_/);
+    } finally {
+      server.close();
+    }
+  });
+});

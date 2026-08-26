@@ -12,6 +12,7 @@ import {
   InvalidTokenError,
   ServerError,
 } from "@modelcontextprotocol/sdk/server/auth/errors.js";
+
 import type {
   OAuthClientInformationFull,
   OAuthTokenRevocationRequest,
@@ -79,11 +80,10 @@ export class EstevaoOAuthProvider implements OAuthServerProvider {
     res: Response,
   ): Promise<void> {
     this.assertResource(params.resource);
-    const scopes = params.scopes?.length ? params.scopes : [LITURGY_SCOPE];
-    const unsupported = scopes.filter((scope) => scope !== LITURGY_SCOPE);
-    if (unsupported.length > 0) {
-      throw new InvalidScopeError(`Unsupported scope(s): ${unsupported.join(", ")}`);
-    }
+    // There is exactly one scope, and it is read-only. Clients ask for all sorts of
+    // things (`openid profile`, `mcp`, nothing at all); rejecting them would break the
+    // connection for no security gain, so unknown scopes are simply not granted.
+    const scopes = [LITURGY_SCOPE];
 
     const id = randomId();
     await this.config.store.createPendingAuthorization({
