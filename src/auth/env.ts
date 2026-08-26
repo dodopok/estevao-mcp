@@ -1,5 +1,6 @@
 import { parseEncryptionKey } from "./crypto.js";
 import type { FirebaseWebConfig } from "./consentPage.js";
+import { firebaseHelperHost } from "./firebaseProxy.js";
 
 export interface AuthEnv {
   publicUrl: URL;
@@ -9,6 +10,10 @@ export interface AuthEnv {
   encryptionKey: Buffer;
   developerFirebaseProjectId: string;
   firebase: FirebaseWebConfig;
+  /** Upstream `<project>.firebaseapp.com` host behind the sign-in proxy. */
+  firebaseHelperHost: string;
+  /** Serve Firebase's sign-in helper from this origin (see firebaseProxy.ts). */
+  firebaseAuthProxy: boolean;
   portalUrl: string;
   docsUrl?: string;
   allowClientIdMetadataDocuments: boolean;
@@ -42,6 +47,10 @@ export function loadAuthEnv(env: NodeJS.ProcessEnv = process.env): AuthEnv | und
     throw new Error("MCP_PUBLIC_URL must use https (except on localhost).");
   }
 
+  const projectId = env.FIREBASE_PROJECT_ID?.trim() || env.DEVELOPER_FIREBASE_PROJECT_ID!.trim();
+  const upstreamAuthDomain = env.FIREBASE_AUTH_DOMAIN!.trim();
+  const authProxy = parseBoolean(env.MCP_FIREBASE_AUTH_PROXY) ?? true;
+
   return {
     publicUrl,
     resource: new URL("/mcp", publicUrl),
@@ -51,9 +60,13 @@ export function loadAuthEnv(env: NodeJS.ProcessEnv = process.env): AuthEnv | und
     developerFirebaseProjectId: env.DEVELOPER_FIREBASE_PROJECT_ID!.trim(),
     firebase: {
       apiKey: env.FIREBASE_API_KEY!.trim(),
-      authDomain: env.FIREBASE_AUTH_DOMAIN!.trim(),
-      projectId: env.FIREBASE_PROJECT_ID?.trim() || env.DEVELOPER_FIREBASE_PROJECT_ID!.trim(),
+      // Same-origin when proxying, so Safari's ITP and in-app browsers stop
+      // breaking the sign-in round trip.
+      authDomain: authProxy ? publicUrl.host : upstreamAuthDomain,
+      projectId,
     },
+    firebaseHelperHost: firebaseHelperHost(upstreamAuthDomain, projectId),
+    firebaseAuthProxy: authProxy,
     portalUrl: (env.ESTEVAO_PORTAL_URL ?? "https://estevao.caminhoanglicano.com.br").replace(
       /\/+$/,
       "",

@@ -118,9 +118,28 @@ The mode is chosen by environment, and resolved per request in this order:
 | `MCP_DATABASE_SSL` | no | Force TLS on the database connection (auto-detected) |
 | `ESTEVAO_PORTAL_URL` | no | Developer portal link shown on the consent screen |
 | `MCP_ALLOW_CLIENT_ID_METADATA_DOCUMENTS` | no | Accept URL-shaped `client_id`s (default `true`) |
+| `MCP_FIREBASE_AUTH_PROXY` | no | Serve Firebase's sign-in helper from this origin (default `true`, see below) |
 
 Setting only some of these is a configuration error and the server refuses to start, rather
 than silently falling back to key-only mode. The Postgres schema is created on boot.
+
+#### Same-origin sign-in (required on mobile and Safari)
+
+By default the Firebase Web SDK runs its sign-in helper on `<project>.firebaseapp.com`, a
+different origin from this server. Safari's ITP (16.1+), Firefox and the in-app browsers used
+by mobile assistants block the cross-origin round trip that flow needs: the user picks a Google
+account and then nothing happens. So this server reverse-proxies `/__/auth/*` to the Firebase
+helper and points the consent screen at its own origin, which is the fix
+[Firebase documents](https://firebase.google.com/docs/auth/web/redirect-best-practices) for it.
+Sign-in uses a full-page redirect rather than a popup, for the same reason.
+
+Two one-time console steps make this work:
+
+1. **Firebase Console → Authentication → Settings → Authorized domains**: add the MCP host.
+2. **Google Cloud Console → APIs & Services → Credentials → the Web OAuth 2.0 client** used by
+   Firebase: add `https://<mcp host>/__/auth/handler` to *Authorized redirect URIs*.
+
+Set `MCP_FIREBASE_AUTH_PROXY=false` to go back to the stock cross-origin behaviour.
 
 Endpoints: `/.well-known/oauth-protected-resource` (also under `/mcp`),
 `/.well-known/oauth-authorization-server`, `/authorize`, `/token`, `/register`, `/revoke`,

@@ -4,6 +4,7 @@ import { OAuthError, ServerError } from "@modelcontextprotocol/sdk/server/auth/e
 import { renderConsentPage, renderMessagePage, type FirebaseWebConfig } from "./consentPage.js";
 import { InvalidIdentityTokenError } from "./firebase.js";
 import { KeyProvisioningError } from "./estevaoKeys.js";
+import { createFirebaseAuthProxy } from "./firebaseProxy.js";
 import { LITURGY_SCOPE, type EstevaoOAuthProvider } from "./provider.js";
 
 export interface AuthRouterOptions {
@@ -11,8 +12,12 @@ export interface AuthRouterOptions {
   issuer: URL;
   resource: URL;
   firebase: FirebaseWebConfig;
+  /** When set, Firebase's sign-in helper is proxied from this origin. */
+  firebaseHelperHost?: string;
   portalUrl: string;
   docsUrl?: string;
+  /** Test seam for the sign-in helper proxy. */
+  fetchFn?: typeof fetch;
 }
 
 /**
@@ -71,6 +76,12 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
       ...(options.docsUrl ? { serviceDocumentationUrl: new URL(options.docsUrl) } : {}),
     }),
   );
+
+  if (options.firebaseHelperHost) {
+    const proxy = createFirebaseAuthProxy(options.firebaseHelperHost, options.fetchFn);
+    router.use("/__/auth", proxy);
+    router.use("/__/firebase", proxy);
+  }
 
   router.get("/oauth/consent", async (req: Request, res: Response) => {
     const requestId = typeof req.query.request === "string" ? req.query.request : "";

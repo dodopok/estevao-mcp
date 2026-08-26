@@ -70,7 +70,7 @@ export function renderConsentPage(options: {
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js";
       import {
-        getAuth, GoogleAuthProvider, signInWithPopup,
+        getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
         signInWithEmailAndPassword, createUserWithEmailAndPassword
       } from "https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js";
 
@@ -79,9 +79,9 @@ export function renderConsentPage(options: {
       const el = (id) => document.getElementById(id);
       let idToken = null;
 
-      const fail = (message) => {
+      const fail = (message, code) => {
         const box = el("error");
-        box.textContent = message;
+        box.textContent = code ? message + " (" + code + ")" : message;
         box.hidden = false;
       };
 
@@ -93,12 +93,25 @@ export function renderConsentPage(options: {
         el("error").hidden = true;
       };
 
+      // Coming back from the Google sign-in redirect.
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) await signedIn(result.user);
+        else if (auth.currentUser) await signedIn(auth.currentUser);
+      } catch (err) {
+        fail("Não foi possível concluir o login com o Google.", err.code);
+      }
+
+      // A full-page redirect, not a popup: in-app browsers (and Safari's tracking
+      // protection) routinely break popup sign-in, leaving the user stuck after
+      // choosing their account.
       el("google").addEventListener("click", async () => {
+        el("google").disabled = true;
         try {
-          const result = await signInWithPopup(auth, new GoogleAuthProvider());
-          await signedIn(result.user);
+          await signInWithRedirect(auth, new GoogleAuthProvider());
         } catch (err) {
-          fail("Não foi possível entrar com o Google. Tente novamente.");
+          el("google").disabled = false;
+          fail("Não foi possível iniciar o login com o Google.", err.code);
         }
       });
 
@@ -119,7 +132,7 @@ export function renderConsentPage(options: {
           }
           await signedIn(credential.user);
         } catch (err) {
-          fail("E-mail ou senha inválidos.");
+          fail("E-mail ou senha inválidos.", err.code);
         }
       });
 
