@@ -41,7 +41,7 @@ Then ask things like *"what are the readings for next Sunday?"*, *"assemble toni
 
 ## Tools
 
-Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optional `prayer_book` (default `loc_2015`); all tools are read-only.
+Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optional `prayer_book` (default `loc_2015`); all tools are read-only. Prayer book codes are validated by the API rather than pinned in this server, so editions added upstream work without a release here — `list_prayer_books` always shows the current catalogue.
 
 | Tool | What it does |
 |---|---|
@@ -54,7 +54,9 @@ Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optiona
 | `search_celebrations` | Full-text search of feasts, saints and holy days |
 | `list_celebrations` | Browse the sanctoral calendar with filters (type, movable, year) |
 | `get_celebration` | One celebration in detail: transfer rules, calculation, collects, readings |
-| `list_prayer_books` | Available prayer books (11 editions, pt-BR/en/es) and Bible versions |
+| `list_prayer_books` | Available prayer books (20+ editions, pt-BR/en/es/cy) and Bible versions |
+| `get_prayer_book_preferences` | Which preferences a book accepts, with allowed values (psalm translation, canticles, cycles) |
+| `explain_liturgical_day` | The reasoning behind a date: precedence, transfers, colour and how each reading was chosen |
 | `compare_prayer_books` | Side-by-side comparison of 2–4 prayer books for the same day or office |
 
 ## Resources & prompts
@@ -73,6 +75,14 @@ Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optiona
 | `ESTEVAO_DEFAULT_PRAYER_BOOK` | `loc_2015` | Default prayer book code |
 | `ESTEVAO_TIMEZONE` | system | IANA timezone used to resolve `today` |
 | `ESTEVAO_LANGUAGE` | — | Default label language (`pt-BR`, `en`, `es`) and upstream `preferences[language]` |
+
+### Per-book preferences
+
+The date-scoped tools take a `preferences` object forwarded to the API, which unlocks the
+per-edition options the Ordo app exposes — the Coverdale psalter on the English books
+(`{ "psalm_translation": "coverdale" }`), monthly vs appointed psalm cycles, canticle and
+opening-sentence choices, family-rite variants. The accepted keys differ per book, so call
+`get_prayer_book_preferences` first rather than guessing.
 
 ### Languages
 

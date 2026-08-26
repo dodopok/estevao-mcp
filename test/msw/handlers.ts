@@ -88,7 +88,44 @@ export const handlers = [
   http.get(`${BASE_URL}/api/v1/celebrations/:id`, () => HttpResponse.json(celebrationDetail)),
   http.get(`${BASE_URL}/api/v1/celebrations`, () => HttpResponse.json(celebrationsSearch)),
 
+  // explanation — the decision trail behind a day
+  http.get(`${BASE_URL}/api/v1/liturgical_explanation/:year/:month/:day`, ({ request }) => {
+    const url = new URL(request.url);
+    return HttpResponse.json({
+      data: {
+        date: "2026-07-14",
+        prayer_book_code: url.searchParams.get("preferences[prayer_book_code]"),
+        calendar: { season: "Tempo Comum", week: 7, cycle: "C", proper: null },
+        celebration: { name: null },
+        color: { value: "verde", reason: "season_default" },
+        transfers: [],
+        reading_guide: { rule: "semicontinuous", table: "weekday_year_1" },
+        readings: {
+          psalm: {
+            reference: "Salmo 15",
+            source: url.searchParams.get("preferences[psalm_translation]") ?? "bible_version",
+          },
+        },
+        partial: false,
+      },
+      meta: { request_id: null, contract_version: 1 },
+    });
+  }),
+
   // metadata
+  http.get(`${BASE_URL}/api/v1/prayer_books/:code/preferences`, ({ params }) =>
+    HttpResponse.json({
+      prayer_book: params.code,
+      categories: [
+        {
+          key: "psalms",
+          preferences: [
+            { key: "psalm_translation", options: [{ value: "bible_version" }, { value: "coverdale" }] },
+          ],
+        },
+      ],
+    }),
+  ),
   http.get(`${BASE_URL}/api/v1/prayer_books`, () => HttpResponse.json(prayerBooks)),
   http.get(`${BASE_URL}/api/v1/bible_versions`, () =>
     HttpResponse.json({ data: [{ code: "NVI", name: "Nova Versão Internacional", language: "pt-BR" }] }),

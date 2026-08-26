@@ -5,7 +5,7 @@ import { buildPreferences } from "../context.js";
 import { resolveDate, toIso } from "../dates.js";
 import { cached, TTL_IMMUTABLE } from "../cache/lru.js";
 import { normalizeCalendarMonth, normalizeLiturgicalDay } from "../normalize/calendar.js";
-import { dateParam, jsonResult, prayerBookParam, safeHandler } from "./shared.js";
+import { dateParam, jsonResult, prayerBookParam, preferencesParam, safeHandler } from "./shared.js";
 
 const readOnly = { readOnlyHint: true } as const;
 
@@ -22,6 +22,7 @@ export function registerCalendarTools(server: McpServer, ctx: ServerContext): vo
         date: dateParam,
         prayer_book: prayerBookParam,
         bible_version: z.string().optional().describe("Bible version code, e.g. nvi"),
+        preferences: preferencesParam,
         language: z.string().optional().describe("Response language: pt-BR, en or es"),
       },
       annotations: readOnly,

@@ -38,16 +38,18 @@ function firstText(result: Awaited<ReturnType<Client["callTool"]>>): string {
 }
 
 describe("phase 2 tools", () => {
-  it("lists all 11 tools", async () => {
+  it("lists all 13 tools", async () => {
     const client = await connectedClient();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual([
+expect(tools.map((t) => t.name).sort()).toEqual([
       "compare_prayer_books",
+      "explain_liturgical_day",
       "get_calendar_month",
       "get_celebration",
       "get_daily_office",
       "get_lectionary_cycle",
       "get_liturgical_day",
+      "get_prayer_book_preferences",
       "get_readings",
       "get_year_overview",
       "list_celebrations",
@@ -200,5 +202,57 @@ describe("prompts", () => {
     expect(text).toContain("get_daily_office");
     expect(text).toContain("FAITHFULLY");
     expect(text).toContain("Do not add commentary");
+  });
+
+});
+
+describe("api surface added after the first release", () => {
+  it("explain_liturgical_day returns the decision trail", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "explain_liturgical_day",
+      arguments: { date: "2026-07-14" },
+    });
+    const trail = JSON.parse(firstText(result));
+    expect(trail.color.reason).toBe("season_default");
+    expect(trail.reading_guide.rule).toBe("semicontinuous");
+    // Empty branches are pruned rather than shipped as noise.
+    expect(trail.transfers).toBeUndefined();
+    expect(trail.celebration).toBeUndefined();
+  });
+
+  it("forwards per-book preferences, so the Coverdale psalter is reachable", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "explain_liturgical_day",
+      arguments: {
+        date: "2026-07-14",
+        prayer_book: "loc_1662_en",
+        preferences: { psalm_translation: "coverdale" },
+      },
+    });
+    const trail = JSON.parse(firstText(result));
+    expect(trail.prayer_book_code).toBe("loc_1662_en");
+    expect(trail.readings.psalm.source).toBe("coverdale");
+  });
+
+  it("get_prayer_book_preferences describes what a book accepts", async () => {
+    const client = await connectedClient();
+    const result = await client.callTool({
+      name: "get_prayer_book_preferences",
+      arguments: { prayer_book: "loc_1662_en" },
+    });
+    const schema = JSON.parse(firstText(result));
+    expect(schema.categories[0].preferences[0].key).toBe("psalm_translation");
+  });
+
+  it("accepts prayer books added to the API after this server was written", async () => {
+    const client = await connectedClient();
+    // loc_1984_cy (Welsh) postdates the old hardcoded enum, which rejected it outright.
+    const result = await client.callTool({
+      name: "get_liturgical_day",
+      arguments: { date: "2026-07-14", prayer_book: "loc_1984_cy" },
+    });
+    expect(result.isError).toBeFalsy();
   });
 });

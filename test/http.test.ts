@@ -47,7 +47,7 @@ describe("Streamable HTTP transport", () => {
       const client = new Client({ name: "http-test", version: "0.0.0" });
       await client.connect(transport);
       const { tools } = await client.listTools();
-      expect(tools.length).toBe(11);
+      expect(tools.length).toBe(13);
       const result = await client.callTool({
         name: "get_liturgical_day",
         arguments: { date: "2026-07-14" },
@@ -94,7 +94,7 @@ describe("Streamable HTTP transport", () => {
       const client = new Client({ name: "http-test", version: "0.0.0" });
       await client.connect(transport);
       const { tools } = await client.listTools();
-      expect(tools.length).toBe(11);
+      expect(tools.length).toBe(13);
       await client.close();
     } finally {
       server.close();

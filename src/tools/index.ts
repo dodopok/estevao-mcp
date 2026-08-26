@@ -6,6 +6,7 @@ import { registerOfficeTools } from "./office.js";
 import { registerCelebrationTools } from "./celebrations.js";
 import { registerPrayerBookTools } from "./prayerBooks.js";
 import { registerCompareTools } from "./compare.js";
+import { registerExplanationTools } from "./explain.js";
 
 export function registerTools(server: McpServer, ctx: ServerContext): void {
   registerCalendarTools(server, ctx);
@@ -14,4 +15,5 @@ export function registerTools(server: McpServer, ctx: ServerContext): void {
   registerCelebrationTools(server, ctx);
   registerPrayerBookTools(server, ctx);
   registerCompareTools(server, ctx);
+  registerExplanationTools(server, ctx);
 }

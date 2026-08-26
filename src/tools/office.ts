@@ -6,7 +6,7 @@ import { resolveDate, toIso } from "../dates.js";
 import { cached, TTL_IMMUTABLE } from "../cache/lru.js";
 import { normalizeDailyOffice } from "../normalize/dailyOffice.js";
 import { renderOfficeMarkdown } from "../format/markdown.js";
-import { dateParam, jsonResult, prayerBookParam, safeHandler, textResult } from "./shared.js";
+import { dateParam, jsonResult, prayerBookParam, preferencesParam, safeHandler, textResult } from "./shared.js";
 import type { Preferences } from "../client/endpoints.js";
 import type { DailyOffice } from "../normalize/types.js";
 
@@ -43,6 +43,7 @@ export function registerOfficeTools(server: McpServer, ctx: ServerContext): void
         family: z.boolean().optional().describe("Family rite variant, when the book supports it"),
         prayer_book: prayerBookParam,
         bible_version: z.string().optional(),
+        preferences: preferencesParam,
         language: z
           .string()
           .optional()

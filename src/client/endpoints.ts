@@ -5,6 +5,12 @@ export interface Preferences {
   bibleVersion?: string;
   language?: string;
   readingType?: string;
+  /**
+   * Any other per-book preference, forwarded as `preferences[key]`. The set differs
+   * per prayer book (psalm translation, canticle choices, psalm cycles, family rite
+   * variants); `getPrayerBookPreferences` describes what a given book accepts.
+   */
+  extra?: Record<string, string | number | boolean>;
 }
 
 export interface DateParts {
@@ -14,13 +20,20 @@ export interface DateParts {
 }
 
 function preferenceParams(prefs: Preferences): QueryParams {
-  return {
+  const params: QueryParams = {
     "preferences[prayer_book_code]": prefs.prayerBook,
     "preferences[bible_version]": prefs.bibleVersion,
     "preferences[language]": prefs.language,
     "preferences[reading_type]": prefs.readingType,
   };
+  for (const [key, value] of Object.entries(prefs.extra ?? {})) {
+    if (PREFERENCE_KEY.test(key)) params[`preferences[${key}]`] = value;
+  }
+  return params;
 }
+
+/** Guards the query string against anything that is not a plain preference name. */
+const PREFERENCE_KEY = /^[a-z][a-z0-9_]{0,60}$/;
 
 /** Typed wrapper over the Estêvão REST endpoints used by the MCP server. */
 export class EstevaoApi {
@@ -106,6 +119,27 @@ export class EstevaoApi {
 
   getCelebrationByDate(month: number, day: number, prefs: Preferences): Promise<unknown> {
     return this.http.get(`/api/v1/celebrations/date/${month}/${day}`, preferenceParams(prefs));
+  }
+
+  /** The decision trail behind a day: precedence, transfers, colour and reading choice. */
+  getLiturgicalExplanation(
+    date: DateParts,
+    prefs: Preferences,
+    options: { serviceType?: string; locale?: string } = {},
+  ): Promise<unknown> {
+    return this.http.get(
+      `/api/v1/liturgical_explanation/${date.year}/${date.month}/${date.day}`,
+      {
+        ...preferenceParams(prefs),
+        service_type: options.serviceType,
+        locale: options.locale,
+      },
+    );
+  }
+
+  /** Preference categories a prayer book accepts, with allowed values. */
+  getPrayerBookPreferences(code: string): Promise<unknown> {
+    return this.http.get(`/api/v1/prayer_books/${code}/preferences`);
   }
 
   getLectionaryCycle(year: number): Promise<unknown> {

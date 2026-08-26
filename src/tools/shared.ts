@@ -1,12 +1,22 @@
 import { z } from "zod";
-import { PRAYER_BOOK_CODES } from "../context.js";
+import { SAMPLE_PRAYER_BOOK_CODES } from "../context.js";
 import { toToolResult } from "../client/errors.js";
 
 export const prayerBookParam = z
-  .enum(PRAYER_BOOK_CODES)
+  .string()
   .optional()
   .describe(
-    "Prayer book code (default loc_2015, IEAB pt-BR). Others: locb_2008, loc_1987, loc_1662, loc_2021 (pt-BR); loc_2019_en, loc_1662_en, loc_1979_en (en); loc_2019_es (es). loc_2019 and loc_1549 are premium-locked for API access.",
+    `Prayer book code (default loc_2015, IEAB pt-BR). Common ones: ${SAMPLE_PRAYER_BOOK_CODES.join(", ")}. ` +
+      "There are over twenty editions, including Welsh, Spanish and historical books — call list_prayer_books " +
+      "for the current catalogue. Some editions are premium-locked for API access.",
+  );
+
+export const preferencesParam = z
+  .record(z.union([z.string(), z.number(), z.boolean()]))
+  .optional()
+  .describe(
+    "Per-book preferences, e.g. { psalm_translation: 'coverdale', psalm_cycle: 'monthly' }. " +
+      "Which keys and values a book accepts varies — call get_prayer_book_preferences first.",
   );
 
 export const dateParam = z

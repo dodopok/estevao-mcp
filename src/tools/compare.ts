@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { PRAYER_BOOK_CODES } from "../context.js";
 import { resolveDate, toIso } from "../dates.js";
 import { cached, TTL_IMMUTABLE } from "../cache/lru.js";
 import { normalizeLiturgicalDay } from "../normalize/calendar.js";
@@ -24,10 +23,10 @@ export function registerCompareTools(server: McpServer, ctx: ServerContext): voi
       inputSchema: {
         date: dateParam,
         books: z
-          .array(z.enum(PRAYER_BOOK_CODES))
+          .array(z.string())
           .min(2)
           .max(4)
-          .describe("Prayer book codes to compare"),
+          .describe("Prayer book codes to compare (see list_prayer_books)"),
         aspect: z.enum(["day", "office"]).describe("Compare the liturgical day or a full office"),
         office: z
           .enum(["morning", "midday", "evening", "compline", "late_evening"])
