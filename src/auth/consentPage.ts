@@ -70,14 +70,54 @@ export function renderConsentPage(options: {
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js";
       import {
-        getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
+        initializeAuth, browserPopupRedirectResolver,
+        indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
+        GoogleAuthProvider, signInWithRedirect, getRedirectResult,
         signInWithEmailAndPassword, createUserWithEmailAndPassword
       } from "https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js";
 
       const REQUEST_ID = ${JSON.stringify(requestId)};
-      const auth = getAuth(initializeApp(${config}));
       const el = (id) => document.getElementById(id);
       let idToken = null;
+
+      /**
+       * Sign-in problems happen in the browser, where nothing reaches the server logs.
+       * These beacons are what makes a failed connection diagnosable at all; they carry
+       * error codes and flags only, never tokens or credentials.
+       */
+      const report = (stage, detail = {}) => {
+        try {
+          const body = JSON.stringify({ request: REQUEST_ID, stage, ...detail });
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon("/oauth/diagnostics", new Blob([body], { type: "application/json" }));
+          } else {
+            void fetch("/oauth/diagnostics", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+              keepalive: true,
+            });
+          }
+        } catch {
+          /* diagnostics must never break the flow */
+        }
+      };
+
+      window.addEventListener("error", (event) => {
+        report("script-error", { message: String(event.message).slice(0, 200) });
+      });
+
+      const session = {
+        get(key) {
+          try { return window.sessionStorage.getItem(key); } catch { return null; }
+        },
+        set(key, value) {
+          try { window.sessionStorage.setItem(key, value); return true; } catch { return false; }
+        },
+        remove(key) {
+          try { window.sessionStorage.removeItem(key); } catch { /* ignore */ }
+        },
+      };
 
       const fail = (message, code) => {
         const box = el("error");
@@ -85,20 +125,41 @@ export function renderConsentPage(options: {
         box.hidden = false;
       };
 
+      // In-app browsers routinely block IndexedDB; without a working fallback the
+      // pending redirect is lost and the user silently lands back on this screen.
+      const auth = initializeAuth(initializeApp(${config}), {
+        persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+        popupRedirectResolver: browserPopupRedirectResolver,
+      });
+
       const signedIn = async (user) => {
         idToken = await user.getIdToken();
         el("who").textContent = user.email || user.displayName || "sua conta";
         el("signin").hidden = true;
         el("approve").hidden = false;
         el("error").hidden = true;
+        report("signed-in");
       };
+
+      const wasPending = session.get("estevao_pending") === "1";
+      session.remove("estevao_pending");
+      report("loaded", { pending: wasPending, storage: session.set("estevao_probe", "1") });
+      session.remove("estevao_probe");
 
       // Coming back from the Google sign-in redirect.
       try {
         const result = await getRedirectResult(auth);
-        if (result?.user) await signedIn(result.user);
-        else if (auth.currentUser) await signedIn(auth.currentUser);
+        const user = result?.user ?? auth.currentUser;
+        if (user) {
+          await signedIn(user);
+        } else if (wasPending) {
+          report("redirect-lost");
+          fail(
+            "O login com o Google não retornou. Tente novamente, ou use e-mail e senha abaixo.",
+          );
+        }
       } catch (err) {
+        report("redirect-error", { code: err.code });
         fail("Não foi possível concluir o login com o Google.", err.code);
       }
 
@@ -107,10 +168,14 @@ export function renderConsentPage(options: {
       // choosing their account.
       el("google").addEventListener("click", async () => {
         el("google").disabled = true;
+        report("redirect-start");
         try {
+          session.set("estevao_pending", "1");
           await signInWithRedirect(auth, new GoogleAuthProvider());
         } catch (err) {
           el("google").disabled = false;
+          session.remove("estevao_pending");
+          report("redirect-start-error", { code: err.code });
           fail("Não foi possível iniciar o login com o Google.", err.code);
         }
       });
@@ -132,6 +197,7 @@ export function renderConsentPage(options: {
           }
           await signedIn(credential.user);
         } catch (err) {
+          report("email-error", { code: err.code });
           fail("E-mail ou senha inválidos.", err.code);
         }
       });
@@ -146,9 +212,11 @@ export function renderConsentPage(options: {
           });
           const body = await response.json();
           if (!response.ok) throw new Error(body.message || "Não foi possível concluir a conexão.");
+          report("approved");
           window.location.assign(body.redirect_to);
         } catch (err) {
           el("allow").disabled = false;
+          report("approve-error", { message: String(err.message).slice(0, 200) });
           fail(err.message);
         }
       });

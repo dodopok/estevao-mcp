@@ -99,6 +99,7 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
         );
       return;
     }
+    console.error(`[consent] rendered request=${truncate(requestId, 40)} client=${truncate(context.clientName, 60)}`);
     res
       .type("html")
       .send(
@@ -121,10 +122,28 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
     }
     try {
       const { redirectTo } = await provider.completeAuthorization(requestId, idToken);
+      console.error(`[consent] approved request=${truncate(requestId, 40)}`);
       res.json({ redirect_to: redirectTo });
     } catch (err) {
+      console.error(
+        `[consent] approve failed request=${truncate(requestId, 40)} error=${err instanceof Error ? err.message : String(err)}`,
+      );
       respondWithConsentError(res, err);
     }
+  });
+
+  // Sign-in runs in the user's browser, so without this endpoint a failed connection
+  // leaves no trace anywhere. Codes and flags only — never tokens.
+  router.post("/oauth/diagnostics", express.json({ limit: "16kb" }), (req, res) => {
+    const { request, stage, ...detail } = (req.body ?? {}) as Record<string, unknown>;
+    const fields = Object.entries(detail)
+      .map(([key, value]) => `${key}=${truncate(String(value))}`)
+      .join(" ");
+    console.error(
+      `[consent] stage=${truncate(String(stage ?? "?"), 40)} request=${truncate(String(request ?? "?"), 40)} ` +
+        `${fields} ua=${truncate(String(req.headers["user-agent"] ?? "?"))}`,
+    );
+    res.status(204).end();
   });
 
   router.post("/oauth/deny", express.json({ limit: "16kb" }), async (req, res) => {
@@ -152,6 +171,10 @@ function basicClientAuth(req: Request, _res: Response, next: () => void): void {
     req.body.client_secret = decodeURIComponent(decoded.slice(separator + 1));
   }
   next();
+}
+
+function truncate(value: string, max = 160): string {
+  return value.length > max ? `${value.slice(0, max)}…` : value;
 }
 
 function respondWithConsentError(res: Response, err: unknown): void {
