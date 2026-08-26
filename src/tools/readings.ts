@@ -5,7 +5,7 @@ import { buildPreferences } from "../context.js";
 import { resolveDate, toIso } from "../dates.js";
 import { cached, TTL_IMMUTABLE } from "../cache/lru.js";
 import { normalizeCycleInfo, normalizeLectionaryDay } from "../normalize/lectionary.js";
-import { dateParam, jsonResult, prayerBookParam, safeHandler } from "./shared.js";
+import { dateParam, jsonResult, prayerBookParam, preferencesParam, safeHandler } from "./shared.js";
 
 const readOnly = { readOnlyHint: true } as const;
 
@@ -22,6 +22,7 @@ export function registerReadingsTools(server: McpServer, ctx: ServerContext): vo
         all_services: z.boolean().optional().describe("Include readings for all services"),
         prayer_book: prayerBookParam,
         bible_version: z.string().optional(),
+        preferences: preferencesParam,
       },
       annotations: readOnly,
     },

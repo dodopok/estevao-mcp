@@ -507,7 +507,7 @@ describe("OAuth hardening", () => {
       const client = new Client({ name: "legacy-test", version: "0.0.0" });
       await client.connect(transport);
       const { tools } = await client.listTools();
-      expect(tools.length).toBe(11);
+      expect(tools.length).toBe(13);
       await client.close();
     } finally {
       server.close();
