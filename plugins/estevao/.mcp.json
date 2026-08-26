@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "estevao": {
+      "type": "http",
+      "url": "https://mcp.caminhoanglicano.com.br/mcp"
+    }
+  }
+}

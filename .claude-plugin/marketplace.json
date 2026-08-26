@@ -13,9 +13,9 @@
       "name": "estevao",
       "source": "./plugins/estevao",
       "description": "Anglican liturgical calendar, lectionary and Daily Office via the hosted Estêvão MCP server (browser sign-in, no API key to paste).",
-      "version": "0.1.0",
+      "version": "0.3.0",
       "author": { "name": "Caminho Anglicano" },
-      "homepage": "https://estevao.caminhoanglicano.com.br/mcp",
+      "homepage": "https://estevao.caminhoanglicano.com.br/docs/mcp",
       "repository": "https://github.com/dodopok/estevao-mcp",
       "license": "MIT",
       "keywords": ["liturgy", "anglican", "lectionary", "book-of-common-prayer", "calendar"]
