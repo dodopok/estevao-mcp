@@ -255,12 +255,8 @@ mcp-publisher publish    # mcp-publisher login github, first time
 
 The npm `version` lifecycle hook (`scripts/sync-version.ts`) keeps `server.json` in sync and enforces the registry's 100-char description limit. The server's advertised MCP version comes from `package.json` at build time.
 
-To publish the hosted endpoint in the MCP Registry, add a `remotes` block to `server.json`
-once the deployment is live and its domain is verified:
-
-```json
-"remotes": [{ "type": "streamable-http", "url": "https://mcp.caminhoanglicano.com.br/mcp" }]
-```
+`server.json` lists both the hosted endpoint (`remotes`) and the npm package (`packages`), so
+registry clients can pick either. Keep the hosted URL in step with the actual deployment.
 
 Alternatively, once GitHub Actions is available with the `NPM_TOKEN` secret, `git push --follow-tags` alone triggers the release workflow (npm with provenance + MCP registry via GitHub OIDC).
 
