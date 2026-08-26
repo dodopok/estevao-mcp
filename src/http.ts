@@ -1,15 +1,26 @@
 import express, { type Request, type Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
+import { getOAuthProtectedResourceMetadataUrl } from "@modelcontextprotocol/sdk/server/auth/router.js";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { LRUCache } from "lru-cache";
 import { createEstevaoServer } from "./server.js";
 import { EstevaoHttpClient } from "./client/http.js";
 import { EstevaoApi } from "./client/endpoints.js";
 import type { Config } from "./config.js";
+import { loadAuthEnv, type AuthEnv } from "./auth/env.js";
+import { createFirebaseIdentityVerifier, type IdentityVerifier } from "./auth/firebase.js";
+import { MemoryOAuthStore } from "./auth/memoryStore.js";
+import { PostgresOAuthStore } from "./auth/postgresStore.js";
+import { EstevaoOAuthProvider, LITURGY_SCOPE } from "./auth/provider.js";
+import { createAuthRouter } from "./auth/router.js";
+import { corsMiddleware } from "./auth/cors.js";
+import type { OAuthStore } from "./auth/store.js";
 
 const KEY_FORMAT = /^estevao_[0-9a-f]{48}$/;
 
 export interface HttpEnv {
-  /** Single-key mode: the server holds the upstream key. Unset → passthrough mode. */
+  /** Single-key mode: the server holds the upstream key. Unset → OAuth or passthrough. */
   apiKey?: string;
   /** Optional bearer token protecting the endpoint in single-key mode. */
   mcpToken?: string;
@@ -18,8 +29,16 @@ export interface HttpEnv {
   timezone?: string;
   language?: string;
   allowedHosts?: string[];
+  /** Present when the deployment is configured as an OAuth authorization server. */
+  auth?: AuthEnv;
+  /** Accept raw `X-API-Key` credentials even when OAuth is enabled. */
+  allowApiKeyHeader?: boolean;
   /** Test seam: fetch implementation used for upstream Estêvão API calls. */
   upstreamFetch?: typeof fetch;
+  /** Test seam: override the OAuth store (defaults to Postgres, or memory without DATABASE_URL). */
+  store?: OAuthStore;
+  /** Test seam: override Firebase ID token verification. */
+  verifyIdentity?: IdentityVerifier;
 }
 
 export function loadHttpEnv(env: NodeJS.ProcessEnv = process.env): HttpEnv {
@@ -37,49 +56,94 @@ export function loadHttpEnv(env: NodeJS.ProcessEnv = process.env): HttpEnv {
     allowedHosts: env.ESTEVAO_MCP_ALLOWED_HOSTS?.split(",")
       .map((h) => h.trim())
       .filter(Boolean),
+    auth: loadAuthEnv(env),
+    allowApiKeyHeader: env.ESTEVAO_MCP_ALLOW_API_KEY_HEADER !== "false",
   };
+}
+
+export interface AuthRuntime {
+  provider: EstevaoOAuthProvider;
+  store: OAuthStore;
+  config: AuthEnv;
 }
 
 /**
  * Streamable HTTP variant. Stateless (no sessions) so it scales horizontally.
  *
- * Auth modes:
+ * Auth modes, in resolution order per request:
  * - single-key: ESTEVAO_API_KEY set on the server; optionally require clients to
  *   send `Authorization: Bearer $ESTEVAO_MCP_TOKEN`.
- * - passthrough: no ESTEVAO_API_KEY; each request must carry the caller's own
- *   Estêvão key in `X-API-Key` (or `Authorization: Bearer estevao_…`).
+ * - API key: the caller's own Estêvão key in `X-API-Key` (or `Authorization: Bearer estevao_…`).
+ * - OAuth 2.1: `Authorization: Bearer <token issued by this server>`, which resolves to
+ *   the API key this server provisioned for that user (see src/auth/).
  */
-export function createApp(env: HttpEnv): express.Express {
+export async function createApp(env: HttpEnv): Promise<express.Express> {
   const app = express();
+  // Browser-based clients (web connectors, the MCP Inspector) need this before anything else.
+  app.use(corsMiddleware);
+  const runtime = await createAuthRuntime(env);
+
+  if (runtime) {
+    // The auth router must sit at the root, before the JSON body parser used by /mcp.
+    app.use(
+      createAuthRouter({
+        provider: runtime.provider,
+        issuer: runtime.config.publicUrl,
+        resource: runtime.config.resource,
+        firebase: runtime.config.firebase,
+        portalUrl: runtime.config.portalUrl,
+        docsUrl: runtime.config.docsUrl,
+      }),
+    );
+  }
+
   app.use(express.json({ limit: "1mb" }));
 
   // One upstream client per key so the per-key rate-limit token bucket is shared.
   const clients = new LRUCache<string, EstevaoApi>({ max: 100 });
-  const apiFor = (key: string): EstevaoApi => {
+  const apiFor = (key: string, onUnauthorized?: () => void): EstevaoApi => {
     let api = clients.get(key);
     if (!api) {
-      api = new EstevaoApi(new EstevaoHttpClient(env.baseUrl, key, env.upstreamFetch ?? fetch));
+      const upstream = env.upstreamFetch ?? fetch;
+      const fetchFn: typeof fetch = async (input, init) => {
+        const response = await upstream(input, init);
+        if (response.status === 401 && onUnauthorized) onUnauthorized();
+        return response;
+      };
+      api = new EstevaoApi(new EstevaoHttpClient(env.baseUrl, key, fetchFn));
       clients.set(key, api);
     }
     return api;
   };
 
   app.get("/healthz", (_req, res) => {
-    res.json({ ok: true, mode: env.apiKey ? "single-key" : "passthrough" });
+    res.json({
+      ok: true,
+      mode: env.apiKey ? "single-key" : runtime ? "oauth" : "passthrough",
+      oauth: runtime ? { issuer: runtime.config.publicUrl.href, resource: runtime.config.resource.href } : undefined,
+    });
   });
 
+  const bearerAuth = runtime
+    ? requireBearerAuth({
+        verifier: runtime.provider,
+        requiredScopes: [LITURGY_SCOPE],
+        resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(runtime.config.resource),
+      })
+    : undefined;
+
   app.post("/mcp", async (req, res) => {
-    const key = resolveKey(req, env, res);
-    if (!key) return; // response already sent
+    const resolved = await resolveCredentials(req, res, env, runtime, bearerAuth);
+    if (!resolved) return; // response already sent
 
     const config: Config = {
-      apiKey: key,
+      apiKey: resolved.key,
       baseUrl: env.baseUrl,
       defaultPrayerBook: env.defaultPrayerBook,
       timezone: env.timezone,
       language: env.language,
     };
-    const server = createEstevaoServer({ api: apiFor(key), config });
+    const server = createEstevaoServer({ api: apiFor(resolved.key, resolved.onUnauthorized), config });
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       ...(env.allowedHosts?.length
@@ -101,8 +165,14 @@ export function createApp(env: HttpEnv): express.Express {
     }
   });
 
-  // Stateless mode: no SSE resumption stream, no sessions to delete.
-  const methodNotAllowed = (_req: Request, res: Response) => {
+  // Stateless mode: no SSE resumption stream, no sessions to delete. Clients that probe
+  // with GET/DELETE before authenticating still get the auth challenge, so their OAuth
+  // flow starts instead of dead-ending on a 405.
+  const methodNotAllowed = (req: Request, res: Response) => {
+    if (runtime && !extractApiKey(req) && !env.apiKey) {
+      challengeUnauthorized(res, runtime);
+      return;
+    }
     res.status(405).json(jsonRpcError(-32000, "Method not allowed (stateless server)"));
   };
   app.get("/mcp", methodNotAllowed);
@@ -111,30 +181,130 @@ export function createApp(env: HttpEnv): express.Express {
   return app;
 }
 
-function resolveKey(req: Request, env: HttpEnv, res: Response): string | undefined {
+export async function createAuthRuntime(env: HttpEnv): Promise<AuthRuntime | undefined> {
+  if (!env.auth) return undefined;
+  const config = env.auth;
+
+  const store =
+    env.store ??
+    (config.databaseUrl
+      ? new PostgresOAuthStore(config.databaseUrl, config.databaseSsl)
+      : new MemoryOAuthStore());
+  await store.init();
+
+  const provider = new EstevaoOAuthProvider({
+    store,
+    encryptionKey: config.encryptionKey,
+    issuer: config.publicUrl,
+    resource: config.resource,
+    apiBaseUrl: env.baseUrl,
+    verifyIdentity:
+      env.verifyIdentity ?? createFirebaseIdentityVerifier(config.developerFirebaseProjectId),
+    allowClientIdMetadataDocuments: config.allowClientIdMetadataDocuments,
+    fetchFn: env.upstreamFetch,
+  });
+
+  return { provider, store, config };
+}
+
+type ResolvedCredentials = { key: string; onUnauthorized?: () => void };
+
+async function resolveCredentials(
+  req: Request,
+  res: Response,
+  env: HttpEnv,
+  runtime: AuthRuntime | undefined,
+  bearerAuth: ReturnType<typeof requireBearerAuth> | undefined,
+): Promise<ResolvedCredentials | undefined> {
   if (env.apiKey) {
     if (env.mcpToken && req.headers.authorization !== `Bearer ${env.mcpToken}`) {
       res.status(401).json(jsonRpcError(-32001, "Invalid or missing bearer token"));
       return undefined;
     }
-    return env.apiKey;
+    return { key: env.apiKey };
   }
-  const header = req.headers["x-api-key"];
-  const fromHeader = Array.isArray(header) ? header[0] : header;
-  const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-  const key = fromHeader ?? (bearer && KEY_FORMAT.test(bearer) ? bearer : undefined);
-  if (!key || !KEY_FORMAT.test(key)) {
-    res
-      .status(401)
-      .json(
-        jsonRpcError(
-          -32001,
-          "Missing Estêvão API key. Send it in the X-API-Key header (estevao_… format).",
-        ),
-      );
+
+  const rawKey = extractApiKey(req);
+  if (rawKey && (env.allowApiKeyHeader ?? true)) {
+    return { key: rawKey };
+  }
+
+  if (runtime && bearerAuth) {
+    // requireBearerAuth writes the 401/403 (with WWW-Authenticate) itself when it fails.
+    const authorized = await runMiddleware(bearerAuth, req, res);
+    if (!authorized) return undefined;
+    const authInfo = (req as Request & { auth?: AuthInfo }).auth;
+    if (!authInfo) {
+      res.status(401).json(jsonRpcError(-32001, "Unauthorized"));
+      return undefined;
+    }
+    try {
+      const key = await runtime.provider.apiKeyForToken(authInfo);
+      return {
+        key,
+        onUnauthorized: () => void runtime.provider.invalidateIdentityKey(authInfo),
+      };
+    } catch {
+      res
+        .status(401)
+        .json(jsonRpcError(-32001, "This connection is no longer linked to an Estêvão API key. Reconnect."));
+      return undefined;
+    }
+  }
+
+  if (runtime) {
+    challengeUnauthorized(res, runtime);
     return undefined;
   }
-  return key;
+
+  res
+    .status(401)
+    .json(
+      jsonRpcError(
+        -32001,
+        "Missing Estêvão API key. Send it in the X-API-Key header (estevao_… format).",
+      ),
+    );
+  return undefined;
+}
+
+/** RFC 9728 challenge: tells the client where to find this server's auth metadata. */
+function challengeUnauthorized(res: Response, runtime: AuthRuntime): void {
+  res
+    .status(401)
+    .set(
+      "WWW-Authenticate",
+      `Bearer error="invalid_token", scope="${LITURGY_SCOPE}", resource_metadata="${getOAuthProtectedResourceMetadataUrl(runtime.config.resource)}"`,
+    )
+    .json(jsonRpcError(-32001, "Authorization required."));
+}
+
+function extractApiKey(req: Request): string | undefined {
+  const header = req.headers["x-api-key"];
+  const fromHeader = Array.isArray(header) ? header[0] : header;
+  if (fromHeader && KEY_FORMAT.test(fromHeader)) return fromHeader;
+  const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  return bearer && KEY_FORMAT.test(bearer) ? bearer : undefined;
+}
+
+/** Runs an express middleware and reports whether it passed control on. */
+function runMiddleware(
+  middleware: ReturnType<typeof requireBearerAuth>,
+  req: Request,
+  res: Response,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (value: boolean) => {
+      if (!settled) {
+        settled = true;
+        resolve(value);
+      }
+    };
+    res.once("finish", () => settle(false));
+    res.once("close", () => settle(false));
+    void middleware(req, res, () => settle(true));
+  });
 }
 
 function jsonRpcError(code: number, message: string) {
@@ -145,9 +315,22 @@ const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].split
 if (isMain) {
   const env = loadHttpEnv();
   const port = Number(process.env.PORT ?? 3333);
-  createApp(env).listen(port, () => {
-    console.error(
-      `estevao-mcp HTTP listening on :${port} (${env.apiKey ? "single-key" : "passthrough"} mode, upstream ${env.baseUrl})`,
-    );
-  });
+  createApp(env)
+    .then((app) => {
+      app.listen(port, () => {
+        const mode = env.apiKey ? "single-key" : env.auth ? "oauth" : "passthrough";
+        console.error(
+          `estevao-mcp HTTP listening on :${port} (${mode} mode, upstream ${env.baseUrl})`,
+        );
+        if (env.auth && !env.auth.databaseUrl) {
+          console.error(
+            "WARNING: no DATABASE_URL set — OAuth state is in memory and will be lost on restart.",
+          );
+        }
+      });
+    })
+    .catch((err) => {
+      console.error(err instanceof Error ? err.message : err);
+      process.exit(1);
+    });
 }

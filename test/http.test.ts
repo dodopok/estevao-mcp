@@ -25,7 +25,10 @@ function env(overrides: Partial<HttpEnv> = {}): HttpEnv {
   return { baseUrl: BASE_URL, defaultPrayerBook: "loc_2015", upstreamFetch, ...overrides };
 }
 
-async function listen(app: ReturnType<typeof createApp>): Promise<{ url: string; server: Server }> {
+async function listen(
+  appOrPromise: Awaited<ReturnType<typeof createApp>> | ReturnType<typeof createApp>,
+): Promise<{ url: string; server: Server }> {
+  const app = await appOrPromise;
   return new Promise((resolve) => {
     const server = app.listen(0, () => {
       const address = server.address() as { port: number };
