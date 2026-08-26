@@ -48,6 +48,15 @@ function upstream(): Upstream {
           { status: 201 },
         );
       }
+      if (url.host === "estevao-portal.firebaseapp.com") {
+        return new Response(`handler for ${url.pathname}${url.search}`, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html",
+            "Set-Cookie": "firebaseSignIn=1; Path=/; HttpOnly",
+          },
+        });
+      }
       if (url.pathname === "/api/v1/prayer_books") {
         return Response.json({ prayer_books: [] });
       }
@@ -78,7 +87,9 @@ function authEnv(port: number): AuthEnv {
     databaseSsl: false,
     encryptionKey: parseEncryptionKey(ENCRYPTION_KEY),
     developerFirebaseProjectId: "estevao-portal",
-    firebase: { apiKey: "fake", authDomain: "portal.firebaseapp.com", projectId: "estevao-portal" },
+    firebase: { apiKey: "fake", authDomain: publicUrl.host, projectId: "estevao-portal" },
+    firebaseHelperHost: "estevao-portal.firebaseapp.com",
+    firebaseAuthProxy: true,
     portalUrl: "https://estevao.example",
     allowClientIdMetadataDocuments: true,
   };
@@ -645,6 +656,41 @@ describe("client compatibility", () => {
       });
       expect(response.status).toBe(200);
       expect(((await response.json()) as { access_token: string }).access_token).toMatch(/^emcp_at_/);
+    } finally {
+      server.close();
+    }
+  });
+});
+
+describe("Firebase sign-in helper proxy", () => {
+  it("serves the sign-in helper from this origin, cookies included", async () => {
+    const { origin, server } = await start();
+    try {
+      const response = await fetch(`${origin}/__/auth/handler?providerId=google.com`, {
+        redirect: "manual",
+      });
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe("handler for /__/auth/handler?providerId=google.com");
+      expect(response.headers.get("set-cookie")).toContain("firebaseSignIn=1");
+    } finally {
+      server.close();
+    }
+  });
+
+  it("points the consent page at this origin and signs in by redirect", async () => {
+    const { origin, server } = await start();
+    try {
+      const clientId = await registerClient(origin);
+      const { challenge } = pkce();
+      const authorizeResponse = await authorize(origin, clientId, challenge);
+      const page = await (await fetch(authorizeResponse.headers.get("location")!)).text();
+
+      // Same-origin authDomain is what keeps in-app browsers and Safari's ITP
+      // from breaking the sign-in round trip.
+      expect(page).toContain(`"authDomain":"127.0.0.1:${new URL(origin).port}"`);
+      expect(page).toContain("signInWithRedirect");
+      expect(page).toContain("getRedirectResult");
+      expect(page).not.toContain("signInWithPopup");
     } finally {
       server.close();
     }

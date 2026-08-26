@@ -91,8 +91,12 @@ export async function createApp(env: HttpEnv): Promise<express.Express> {
         issuer: runtime.config.publicUrl,
         resource: runtime.config.resource,
         firebase: runtime.config.firebase,
+        firebaseHelperHost: runtime.config.firebaseAuthProxy
+          ? runtime.config.firebaseHelperHost
+          : undefined,
         portalUrl: runtime.config.portalUrl,
         docsUrl: runtime.config.docsUrl,
+        fetchFn: env.upstreamFetch,
       }),
     );
   }
