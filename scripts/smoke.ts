@@ -8,6 +8,8 @@ const transport = new StdioClientTransport({
     ...process.env,
     ESTEVAO_API_KEY: process.env.SMOKE_KEY!,
     ESTEVAO_BASE_URL: "http://localhost:3000",
+    // The server has no default prayer book; the smoke run pins one so every call returns data.
+    ESTEVAO_DEFAULT_PRAYER_BOOK: "loc_2015",
   },
 });
 

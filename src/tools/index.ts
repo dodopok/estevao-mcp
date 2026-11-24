@@ -7,6 +7,7 @@ import { registerCelebrationTools } from "./celebrations.js";
 import { registerPrayerBookTools } from "./prayerBooks.js";
 import { registerCompareTools } from "./compare.js";
 import { registerExplanationTools } from "./explain.js";
+import { registerAccountTools } from "./account.js";
 
 export function registerTools(server: McpServer, ctx: ServerContext): void {
   registerCalendarTools(server, ctx);
@@ -16,4 +17,5 @@ export function registerTools(server: McpServer, ctx: ServerContext): void {
   registerPrayerBookTools(server, ctx);
   registerCompareTools(server, ctx);
   registerExplanationTools(server, ctx);
+  if (ctx.account) registerAccountTools(server, ctx, ctx.account);
 }

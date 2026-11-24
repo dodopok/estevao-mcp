@@ -41,7 +41,7 @@ export function toToolResult(err: unknown): ToolErrorResult {
   let text: string;
   if (err instanceof PremiumRequiredError) {
     text =
-      `${err.message} Free alternatives: loc_2015 (pt-BR, default), locb_2008, loc_1662, ` +
+      `${err.message} Free alternatives: loc_2015 (pt-BR), locb_2008, loc_1662, ` +
       `loc_2019_en (en), loc_1662_en (en), loc_1979_en (en), loc_2019_es (es).`;
   } else if (err instanceof RateLimitError) {
     text =

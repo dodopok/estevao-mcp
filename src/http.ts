@@ -3,6 +3,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import { getOAuthProtectedResourceMetadataUrl } from "@modelcontextprotocol/sdk/server/auth/router.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import type { AccountPreferences } from "./context.js";
 import { LRUCache } from "lru-cache";
 import { createEstevaoServer } from "./server.js";
 import { EstevaoHttpClient } from "./client/http.js";
@@ -25,7 +26,8 @@ export interface HttpEnv {
   /** Optional bearer token protecting the endpoint in single-key mode. */
   mcpToken?: string;
   baseUrl: string;
-  defaultPrayerBook: string;
+  /** Optional; see Config.defaultPrayerBook. */
+  defaultPrayerBook?: string;
   timezone?: string;
   language?: string;
   allowedHosts?: string[];
@@ -52,7 +54,7 @@ export function loadHttpEnv(env: NodeJS.ProcessEnv = process.env): HttpEnv {
     apiKey,
     mcpToken: env.ESTEVAO_MCP_TOKEN?.trim() || undefined,
     baseUrl: (env.ESTEVAO_BASE_URL ?? "https://api.caminhoanglicano.com.br").replace(/\/+$/, ""),
-    defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK ?? "loc_2015",
+    defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK?.trim() || undefined,
     timezone: env.ESTEVAO_TIMEZONE,
     language: env.ESTEVAO_LANGUAGE,
     allowedHosts: env.ESTEVAO_MCP_ALLOWED_HOSTS?.split(",")
@@ -163,7 +165,11 @@ export async function createApp(env: HttpEnv): Promise<express.Express> {
       timezone: env.timezone,
       language: env.language,
     };
-    const server = createEstevaoServer({ api: apiFor(resolved.key, resolved.onUnauthorized), config });
+    const server = createEstevaoServer({
+      api: apiFor(resolved.key, resolved.onUnauthorized),
+      config,
+      account: resolved.account,
+    });
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       ...(env.allowedHosts?.length
@@ -227,7 +233,12 @@ export async function createAuthRuntime(env: HttpEnv): Promise<AuthRuntime | und
   return { provider, store, config };
 }
 
-type ResolvedCredentials = { key: string; onUnauthorized?: () => void };
+type ResolvedCredentials = {
+  key: string;
+  onUnauthorized?: () => void;
+  /** Only for OAuth sign-ins: the modes with a raw key have no account to save to. */
+  account?: AccountPreferences;
+};
 
 async function resolveCredentials(
   req: Request,
@@ -259,10 +270,14 @@ async function resolveCredentials(
       return undefined;
     }
     try {
-      const key = await runtime.provider.apiKeyForToken(authInfo);
+      const account = await runtime.provider.accountForToken(authInfo);
       return {
-        key,
+        key: account.key,
         onUnauthorized: () => void runtime.provider.invalidateIdentityKey(authInfo),
+        account: {
+          prayerBook: account.prayerBook,
+          savePrayerBook: (code) => runtime.provider.saveAccountPrayerBook(account.identityId, code),
+        },
       };
     } catch {
       res

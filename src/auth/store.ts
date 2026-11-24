@@ -9,6 +9,8 @@ export interface Identity {
   apiKeyCiphertext?: string;
   apiKeyId?: string;
   apiKeyPreview?: string;
+  /** Prayer book code the user saved as theirs, used when a call names none. */
+  prayerBook?: string;
 }
 
 export interface PendingAuthorization {
@@ -75,6 +77,8 @@ export interface OAuthStore {
     id: string,
     key: { ciphertext: string; keyId?: string; preview?: string } | undefined,
   ): Promise<void>;
+  /** Saves (or, with undefined, removes) the user's prayer book. */
+  saveIdentityPrayerBook(id: string, prayerBook: string | undefined): Promise<void>;
 
   purgeExpired(): Promise<void>;
 }
@@ -94,9 +98,12 @@ create table if not exists oauth_identities (
   api_key_ciphertext text,
   api_key_id text,
   api_key_preview text,
+  prayer_book text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table oauth_identities add column if not exists prayer_book text;
 
 create table if not exists oauth_pending_authorizations (
   id text primary key,

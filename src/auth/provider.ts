@@ -269,6 +269,11 @@ export class EstevaoOAuthProvider implements OAuthServerProvider {
 
   /** Resolves the Estêvão API key behind an authenticated MCP request. */
   async apiKeyForToken(authInfo: AuthInfo): Promise<string> {
+    return (await this.accountForToken(authInfo)).key;
+  }
+
+  /** The upstream key and the saved prayer book for a token's account, in one read. */
+  async accountForToken(authInfo: AuthInfo): Promise<{ identityId: string; key: string; prayerBook?: string }> {
     const identityId = authInfo.extra?.identityId;
     if (typeof identityId !== "string") {
       throw new InvalidTokenError("Token is not bound to an identity.");
@@ -277,11 +282,17 @@ export class EstevaoOAuthProvider implements OAuthServerProvider {
     if (!identity?.apiKeyCiphertext) {
       throw new InvalidTokenError("No Estêvão API key is linked to this account. Reconnect.");
     }
+    let key: string;
     try {
-      return decryptSecret(identity.apiKeyCiphertext, this.config.encryptionKey);
+      key = decryptSecret(identity.apiKeyCiphertext, this.config.encryptionKey);
     } catch {
       throw new ServerError("Could not read the stored Estêvão API key.");
     }
+    return { identityId, key, prayerBook: identity.prayerBook };
+  }
+
+  async saveAccountPrayerBook(identityId: string, prayerBook: string | undefined): Promise<void> {
+    await this.config.store.saveIdentityPrayerBook(identityId, prayerBook);
   }
 
   /** Drops a broken key and every token bound to it, forcing a clean reconnect. */

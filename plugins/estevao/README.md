@@ -47,4 +47,46 @@ Inspector.
 - "compare o Natal no LOC 1662 e no 2019"
 - "que festa cai em 29 de junho e qual a cor litúrgica?"
 
-Todas as ferramentas são somente leitura.
+As ferramentas de consulta são somente leitura. A única que grava algo é `set_default_prayer_book`,
+que guarda na sua conta o livro de oração que você segue.
+
+## O que o plugin contém
+
+- **Conector MCP** (`.mcp.json`): aponta para o servidor hospedado em
+  `https://mcp.caminhoanglicano.com.br/mcp`. São 13 ferramentas de consulta (calendário, leituras,
+  celebrações, Ofício Diário, comparação entre livros de oração e explicação de cada dia), uma
+  ferramenta que guarda o livro de oração escolhido na sua conta, além de recursos e prompts.
+- **Skill `anglican-liturgy`** (`skills/anglican-liturgy/SKILL.md`): ensina o Claude a escolher o
+  livro de oração e a ferramenta certa, a responder perguntas de "por quê" pela trilha de decisão
+  do motor litúrgico e a reproduzir o texto litúrgico sem paráfrase.
+
+O plugin não roda comandos locais, hooks nem scripts.
+
+## Dados e privacidade
+
+O plugin só se conecta a `mcp.caminhoanglicano.com.br`. A cada chamada, o Claude envia os
+parâmetros da ferramenta, como uma data, um código de livro de oração ou um termo de busca. O
+conteúdo da conversa não é enviado.
+
+Na primeira conexão, o navegador abre a tela de autorização, e você entra com a conta do portal do
+desenvolvedor (Google ou e-mail). O servidor cria uma chave da API Estêvão em seu nome, guarda essa
+chave criptografada e a usa só para consultar `api.caminhoanglicano.com.br`. Você pode revogar a
+chave no [painel](https://estevao.caminhoanglicano.com.br/dashboard/keys) a qualquer momento.
+
+Na primeira pergunta, o Claude pergunta qual livro de oração você segue e guarda a resposta na sua
+conta, para não perguntar de novo nas próximas conversas. Só o código do livro é guardado. Para
+trocar ou apagar, é só pedir ao Claude.
+
+Política de privacidade: https://estevao.caminhoanglicano.com.br/privacy · Suporte: dev@dodopok.dev
+
+---
+
+**English.** Gives Claude accurate Anglican liturgical data from the Estêvão engine: the calendar
+with real precedence rules, lectionary readings, collects and the fully assembled Daily Office in
+more than twenty editions of the Book of Common Prayer and the Livro de Oração Comum. It contains a
+reference to the hosted MCP server (`https://mcp.caminhoanglicano.com.br/mcp`, 13 read-only tools
+plus one that saves the user's prayer book to their account, OAuth sign-in, no API key to paste) and
+the `anglican-liturgy` skill. It runs no local commands,
+hooks or scripts. Claude sends only tool parameters such as a date, a prayer book code or a search
+term; conversation content is not sent. Privacy policy:
+https://estevao.caminhoanglicano.com.br/en/privacy.
