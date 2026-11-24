@@ -25,7 +25,8 @@ export interface HttpEnv {
   /** Optional bearer token protecting the endpoint in single-key mode. */
   mcpToken?: string;
   baseUrl: string;
-  defaultPrayerBook: string;
+  /** Optional; see Config.defaultPrayerBook. */
+  defaultPrayerBook?: string;
   timezone?: string;
   language?: string;
   allowedHosts?: string[];
@@ -52,7 +53,7 @@ export function loadHttpEnv(env: NodeJS.ProcessEnv = process.env): HttpEnv {
     apiKey,
     mcpToken: env.ESTEVAO_MCP_TOKEN?.trim() || undefined,
     baseUrl: (env.ESTEVAO_BASE_URL ?? "https://api.caminhoanglicano.com.br").replace(/\/+$/, ""),
-    defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK ?? "loc_2015",
+    defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK?.trim() || undefined,
     timezone: env.ESTEVAO_TIMEZONE,
     language: env.ESTEVAO_LANGUAGE,
     allowedHosts: env.ESTEVAO_MCP_ALLOWED_HOSTS?.split(",")

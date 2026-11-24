@@ -1,7 +1,11 @@
 export interface Config {
   apiKey: string;
   baseUrl: string;
-  defaultPrayerBook: string;
+  /**
+   * Prayer book used when a call names none. Unset by default: calendars differ between
+   * books, so without it the tools return the catalogue and the user is asked.
+   */
+  defaultPrayerBook?: string;
   timezone?: string;
   /** Default language for generated labels and upstream preferences[language]. */
   language?: string;
@@ -24,7 +28,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     apiKey,
     baseUrl: (env.ESTEVAO_BASE_URL ?? "https://api.caminhoanglicano.com.br").replace(/\/+$/, ""),
-    defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK ?? "loc_2015",
+    defaultPrayerBook: env.ESTEVAO_DEFAULT_PRAYER_BOOK?.trim() || undefined,
     timezone: env.ESTEVAO_TIMEZONE,
     language: env.ESTEVAO_LANGUAGE,
   };

@@ -1,6 +1,6 @@
 import { ResourceTemplate, type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServerContext } from "../context.js";
-import { buildPreferences } from "../context.js";
+import { buildPreferences, PrayerBookRequiredError, prayerBookRequiredPayload } from "../context.js";
 import { resolveDate, toIso } from "../dates.js";
 import { cached, TTL_IMMUTABLE, TTL_METADATA } from "../cache/lru.js";
 import { normalizeLiturgicalDay } from "../normalize/calendar.js";
@@ -10,6 +10,11 @@ import { normalizeExplanation } from "../normalize/explanation.js";
 import { renderOfficeMarkdown } from "../format/markdown.js";
 
 const OFFICE_TYPES = ["morning", "midday", "evening", "compline", "late_evening"];
+
+/** Appended to the description of every resource that depends on a prayer book. */
+const BOOK_NOTE =
+  " Uses the server's default prayer book; on a server without one, it returns the list of prayer " +
+  "books to choose from, and the tools take prayer_book explicitly.";
 
 export function registerResources(server: McpServer, ctx: ServerContext): void {
   server.registerResource(
@@ -49,13 +54,11 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
     "ordo://today",
     {
       title: "Today's liturgical day",
-      description: "Liturgical information for today in the default prayer book",
+      description: "Liturgical information for today." + BOOK_NOTE,
       mimeType: "application/json",
     },
-    async (uri) => {
-      const day = await fetchDay(ctx, "today");
-      return jsonContents(uri.href, day);
-    },
+    async (uri) =>
+      orPrayerBookList(uri.href, async () => jsonContents(uri.href, await fetchDay(ctx, "today"))),
   );
 
   server.registerResource(
@@ -63,13 +66,11 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
     new ResourceTemplate("ordo://day/{date}", { list: undefined }),
     {
       title: "Liturgical day",
-      description: "Liturgical information for a date (YYYY-MM-DD) in the default prayer book",
+      description: "Liturgical information for a date (YYYY-MM-DD)." + BOOK_NOTE,
       mimeType: "application/json",
     },
-    async (uri, variables) => {
-      const day = await fetchDay(ctx, String(variables.date));
-      return jsonContents(uri.href, day);
-    },
+    async (uri, variables) =>
+      orPrayerBookList(uri.href, async () => jsonContents(uri.href, await fetchDay(ctx, String(variables.date)))),
   );
 
   server.registerResource(
@@ -79,10 +80,10 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
       title: "Daily Office",
       description:
         `Fully assembled Daily Office as markdown. date is YYYY-MM-DD or "today"; ` +
-        `office_type is one of ${OFFICE_TYPES.join(", ")}.`,
+        `office_type is one of ${OFFICE_TYPES.join(", ")}.` + BOOK_NOTE,
       mimeType: "text/markdown",
     },
-    async (uri, variables) => {
+    async (uri, variables) => orPrayerBookList(uri.href, async () => {
       const officeType = String(variables.office_type);
       if (!OFFICE_TYPES.includes(officeType)) {
         throw new Error(`Unknown office_type '${officeType}'. Use one of: ${OFFICE_TYPES.join(", ")}.`);
@@ -102,7 +103,7 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
           },
         ],
       };
-    },
+    }),
   );
 
   server.registerResource(
@@ -113,10 +114,10 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
       description:
         "The decision trail for a date (YYYY-MM-DD or \"today\"): precedence, transfers, how the " +
         "colour was decided and which rule picked each reading. Attach it to a conversation to " +
-        "reason about a day without spending a tool call.",
+        "reason about a day without spending a tool call." + BOOK_NOTE,
       mimeType: "application/json",
     },
-    async (uri, variables) => {
+    async (uri, variables) => orPrayerBookList(uri.href, async () => {
       const date = resolveDate(String(variables.date), ctx.config.timezone);
       const prefs = buildPreferences(ctx, {});
       const key = `explain:${toIso(date)}:-:-:${JSON.stringify(prefs)}`;
@@ -124,7 +125,7 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
         normalizeExplanation(await ctx.api.getLiturgicalExplanation(date, prefs)),
       );
       return jsonContents(uri.href, explanation);
-    },
+    }),
   );
 
   server.registerResource(
@@ -132,10 +133,10 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
     new ResourceTemplate("ordo://calendar/{year}/key-dates", { list: undefined }),
     {
       title: "Key dates of a liturgical year",
-      description: "Movable feasts and key dates for a year (Easter, Pentecost, Advent…)",
+      description: "Movable feasts and key dates for a year (Easter, Pentecost, Advent…)." + BOOK_NOTE,
       mimeType: "application/json",
     },
-    async (uri, variables) => {
+    async (uri, variables) => orPrayerBookList(uri.href, async () => {
       const year = Number(variables.year);
       if (!Number.isInteger(year)) throw new Error(`Invalid year '${String(variables.year)}'.`);
       const prefs = buildPreferences(ctx, {});
@@ -143,7 +144,7 @@ export function registerResources(server: McpServer, ctx: ServerContext): void {
         (await ctx.api.getYearKeyDates(year, prefs)) as object,
       );
       return jsonContents(uri.href, dates);
-    },
+    }),
   );
 }
 
@@ -154,6 +155,16 @@ async function fetchDay(ctx: ServerContext, dateInput: string): Promise<object> 
   return cached(key, TTL_IMMUTABLE, async () =>
     normalizeLiturgicalDay(await ctx.api.getCalendarDay(date, prefs), prefs.prayerBook),
   );
+}
+
+/** Without a prayer book, answer with the catalogue rather than failing the read. */
+async function orPrayerBookList<T>(uri: string, read: () => Promise<T>): Promise<T | ReturnType<typeof jsonContents>> {
+  try {
+    return await read();
+  } catch (err) {
+    if (err instanceof PrayerBookRequiredError) return jsonContents(uri, await prayerBookRequiredPayload(err));
+    throw err;
+  }
 }
 
 function jsonContents(uri: string, value: unknown) {

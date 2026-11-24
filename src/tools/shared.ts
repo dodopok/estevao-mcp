@@ -1,14 +1,16 @@
 import { z } from "zod";
-import { SAMPLE_PRAYER_BOOK_CODES } from "../context.js";
+import { PrayerBookRequiredError, prayerBookRequiredPayload, SAMPLE_PRAYER_BOOK_CODES } from "../context.js";
 import { toToolResult } from "../client/errors.js";
 
 export const prayerBookParam = z
   .string()
   .optional()
   .describe(
-    `Prayer book code (default loc_2015, IEAB pt-BR). Common ones: ${SAMPLE_PRAYER_BOOK_CODES.join(", ")}. ` +
-      "There are over twenty editions, including Welsh, Spanish and historical books — call list_prayer_books " +
-      "for the current catalogue. Some editions are premium-locked for API access.",
+    "Prayer book code. Calendars, saints, readings and offices differ between books, so pass the book " +
+      `the user follows, e.g. ${SAMPLE_PRAYER_BOOK_CODES.join(", ")}. There are over twenty editions — ` +
+      "list_prayer_books has the current catalogue. When omitted, the server's configured default is used " +
+      "if it has one; otherwise the tool returns the list of prayer books instead of data. Some editions " +
+      "are premium-locked for API access.",
   );
 
 export const preferencesParam = z
@@ -44,6 +46,8 @@ export function safeHandler<A>(fn: (args: A) => Promise<ToolResult>): (args: A) 
     try {
       return await fn(args);
     } catch (err) {
+      // Not an error: the call is valid, it just needs the user to pick a book first.
+      if (err instanceof PrayerBookRequiredError) return jsonResult(await prayerBookRequiredPayload(err));
       return toToolResult(err);
     }
   };

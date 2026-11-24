@@ -6,7 +6,22 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
  * faithful document assembly. This server intentionally ships no prompt that
  * generates sermons, homilies, devotionals or authored theological reflection.
  */
-export function registerPrompts(server: McpServer): void {
+const PRAYER_BOOK_ARG =
+  "Prayer book code, e.g. loc_2015 or loc_1662_en. If omitted, the one chosen in the conversation is used.";
+
+/**
+ * Prompt text for when the caller named no prayer book. Without a server default, the
+ * model must use the book already chosen in the conversation, or ask for one.
+ */
+function prayerBookStep(prayerBook: string | undefined, defaultPrayerBook: string | undefined): string {
+  if (prayerBook || defaultPrayerBook) return "";
+  return (
+    "Use the prayer book chosen earlier in this conversation. If none has been chosen, ask the user " +
+    "which prayer book they follow before calling any tool, and pass it as prayer_book on every call.\n\n"
+  );
+}
+
+export function registerPrompts(server: McpServer, defaultPrayerBook?: string): void {
   server.registerPrompt(
     "build_liturgy_sheet",
     {
@@ -16,7 +31,7 @@ export function registerPrompts(server: McpServer): void {
       argsSchema: {
         date: z.string().optional().describe('YYYY-MM-DD, "today" or "next-sunday" (default today)'),
         office: z.string().describe("morning, midday, evening or compline"),
-        prayer_book: z.string().optional().describe("Prayer book code (default loc_2015)"),
+        prayer_book: z.string().optional().describe(PRAYER_BOOK_ARG),
       },
     },
     ({ date, office, prayer_book }) => ({
@@ -28,6 +43,7 @@ export function registerPrompts(server: McpServer): void {
             text:
               `Build a print-ready liturgy sheet (boletim) for the ${office} office on ${date ?? "today"}` +
               `${prayer_book ? ` using prayer book ${prayer_book}` : ""}.\n\n` +
+              prayerBookStep(prayer_book, defaultPrayerBook) +
               `1. Call get_daily_office with format=structured to fetch the office.\n` +
               `2. Call get_liturgical_day for the same date to get season, color and celebration for the header.\n` +
               `3. Lay out the sheet: header (date, office name, season, liturgical color, celebration), then every ` +
@@ -50,7 +66,7 @@ export function registerPrompts(server: McpServer): void {
         celebration_or_date: z
           .string()
           .describe('Celebration name (e.g. "Pentecostes") or date (YYYY-MM-DD)'),
-        prayer_book: z.string().optional().describe("Prayer book code (default loc_2015)"),
+        prayer_book: z.string().optional().describe(PRAYER_BOOK_ARG),
       },
     },
     ({ celebration_or_date, prayer_book }) => ({
@@ -62,6 +78,7 @@ export function registerPrompts(server: McpServer): void {
             text:
               `Explain the celebration "${celebration_or_date}"${prayer_book ? ` in prayer book ${prayer_book}` : ""} ` +
               `in strictly factual, historical and liturgical terms.\n\n` +
+              prayerBookStep(prayer_book, defaultPrayerBook) +
               `1. If it looks like a date, call get_liturgical_day for it; otherwise call search_celebrations and then ` +
               `get_celebration for details.\n` +
               `2. Cover: what it commemorates (historical facts), its type and rank in the calendar, whether it is ` +
@@ -119,7 +136,7 @@ export function registerPrompts(server: McpServer): void {
           .string()
           .optional()
           .describe('What specifically to explain, e.g. "why this psalm" or "why not St James"'),
-        prayer_book: z.string().optional().describe("Prayer book code (default loc_2015)"),
+        prayer_book: z.string().optional().describe(PRAYER_BOOK_ARG),
       },
     },
     ({ date, question, prayer_book }) => ({
@@ -131,6 +148,7 @@ export function registerPrompts(server: McpServer): void {
             text:
               `Explain ${question ? `\u201c${question}\u201d` : "how the liturgy resolved"} for ` +
               `${date ?? "today"}${prayer_book ? ` in prayer book ${prayer_book}` : ""}.\n\n` +
+              prayerBookStep(prayer_book, defaultPrayerBook) +
               `1. Call explain_liturgical_day for that date${prayer_book ? ` with prayer_book=${prayer_book}` : ""}. ` +
               `It returns the actual decision trail: precedence between celebrations, transfers, how the colour ` +
               `was decided, which lectionary rule and table chose each reading, and where the psalm came from.\n` +

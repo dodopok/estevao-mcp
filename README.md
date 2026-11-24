@@ -41,7 +41,7 @@ Then ask things like *"what are the readings for next Sunday?"*, *"assemble toni
 
 ## Tools
 
-Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optional `prayer_book` (default `loc_2015`); all tools are read-only. Prayer book codes are validated by the API rather than pinned in this server, so editions added upstream work without a release here — `list_prayer_books` always shows the current catalogue.
+Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every date-scoped tool takes a `prayer_book`; all tools are read-only. See [Choosing a prayer book](#choosing-a-prayer-book). Prayer book codes are validated by the API rather than pinned in this server, so editions added upstream work without a release here — `list_prayer_books` always shows the current catalogue.
 
 | Tool | What it does |
 |---|---|
@@ -72,9 +72,22 @@ Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every tool takes an optiona
 |---|---|---|
 | `ESTEVAO_API_KEY` | — (required for stdio) | API key for the Estêvão API |
 | `ESTEVAO_BASE_URL` | `https://api.caminhoanglicano.com.br` | Override for local/staging |
-| `ESTEVAO_DEFAULT_PRAYER_BOOK` | `loc_2015` | Default prayer book code |
+| `ESTEVAO_DEFAULT_PRAYER_BOOK` | — (none) | Prayer book used when a call names none. Leave unset on shared deployments; see below |
 | `ESTEVAO_TIMEZONE` | system | IANA timezone used to resolve `today` |
 | `ESTEVAO_LANGUAGE` | — | Default label language (`pt-BR`, `en`, `es`) and upstream `preferences[language]` |
+
+### Choosing a prayer book
+
+Calendars, saints, readings, colours and offices differ between prayer books, so the server never
+guesses one. When a call names no `prayer_book` and no default is configured, the tool returns
+the current catalogue (code, name, language, jurisdiction, year) instead of liturgical data, and
+the model asks the user which book they follow. The server's MCP instructions tell the model to
+settle the book once, at the first liturgical question, and pass it on every later call in the
+conversation unless the user names a different book for a specific question. The prompts and the
+`ordo://` resources follow the same rule.
+
+A personal deployment that only ever uses one book can set `ESTEVAO_DEFAULT_PRAYER_BOOK` to skip
+the question. The hosted server leaves it unset.
 
 ### Per-book preferences
 

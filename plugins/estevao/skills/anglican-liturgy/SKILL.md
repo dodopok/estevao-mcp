@@ -13,16 +13,27 @@ date that looks obvious (a saint's day, a colour) is often resolved differently 
 
 All tools are read-only.
 
-## Pick the prayer book first
+## Settle the prayer book once, at the start
 
-- Every date-based tool takes `prayer_book`. The default is `loc_2015`, the Livro de Oração Comum
-  of the Igreja Episcopal Anglicana do Brasil, in Portuguese.
-- If the person names a church, a province, an edition or a language, call `list_prayer_books`
-  and use the matching code. Do not guess codes; editions are added upstream without notice.
-- If the person writes in English or Spanish and gives no hint of a book, say which book the
-  answer uses, so they can ask for another.
-- Some editions are premium-only through the API. If a tool returns that error, tell the person
-  and offer an edition that is available.
+Every answer depends on the prayer book, and there is no safe default: two books can keep
+different saints, readings and colours on the same day. So the first step of a conversation is
+to know which book the person follows.
+
+1. If they named a book, a church or a province, call `list_prayer_books` and use the matching
+   code. Do not guess codes: editions are added upstream, and the list is the only source.
+2. If they did not, ask which prayer book or church they follow before calling any date-based
+   tool. Ask openly rather than offering a fixed short list, since the catalogue is long and
+   growing. If they are unsure, call `list_prayer_books` (with `language` set to theirs) and show
+   the editions in their language.
+3. From then on, pass that `prayer_book` on every call in the conversation without asking again.
+4. If they ask about another book for one question ("and in the 1662?"), use it for that question
+   only, then go back to their book. Switch for good only when they say so.
+
+If a tool answers with `prayerBookRequired: true` instead of data, no book was passed: ask the
+person, using the list it returns, and call again with their choice.
+
+Some editions are premium-only through the API. If a tool returns that error, tell the person and
+offer an edition that is available.
 
 ## Pick the tool
 
