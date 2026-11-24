@@ -17,7 +17,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const apiKey = env.ESTEVAO_API_KEY?.trim();
   if (!apiKey) {
     throw new Error(
-      "ESTEVAO_API_KEY is required. Get one from the Estêvão developer portal and set it in the MCP server env.",
+      "ESTEVAO_API_KEY is required. Get one from the Estevão developer portal and set it in the MCP server env.",
     );
   }
   if (!KEY_FORMAT.test(apiKey)) {

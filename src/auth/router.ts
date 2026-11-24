@@ -56,7 +56,7 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
       resource: resource.href,
       authorization_servers: [issuer.href],
       scopes_supported: [LITURGY_SCOPE],
-      resource_name: "Estêvão MCP",
+      resource_name: "Estevão MCP",
       bearer_methods_supported: ["header"],
       resource_documentation: options.docsUrl,
     });
@@ -72,7 +72,7 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
       issuerUrl: issuer,
       resourceServerUrl: resource,
       scopesSupported: [LITURGY_SCOPE],
-      resourceName: "Estêvão MCP",
+      resourceName: "Estevão MCP",
       ...(options.docsUrl ? { serviceDocumentationUrl: new URL(options.docsUrl) } : {}),
     }),
   );

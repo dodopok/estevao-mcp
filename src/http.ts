@@ -37,7 +37,7 @@ export interface HttpEnv {
   allowApiKeyHeader?: boolean;
   /** Express `trust proxy` setting; defaults to one hop (Railway's edge). */
   trustProxy?: number | boolean | string;
-  /** Test seam: fetch implementation used for upstream Estêvão API calls. */
+  /** Test seam: fetch implementation used for upstream Estevão API calls. */
   upstreamFetch?: typeof fetch;
   /** Test seam: override the OAuth store (defaults to Postgres, or memory without DATABASE_URL). */
   store?: OAuthStore;
@@ -87,7 +87,7 @@ export interface AuthRuntime {
  * Auth modes, in resolution order per request:
  * - single-key: ESTEVAO_API_KEY set on the server; optionally require clients to
  *   send `Authorization: Bearer $ESTEVAO_MCP_TOKEN`.
- * - API key: the caller's own Estêvão key in `X-API-Key` (or `Authorization: Bearer estevao_…`).
+ * - API key: the caller's own Estevão key in `X-API-Key` (or `Authorization: Bearer estevao_…`).
  * - OAuth 2.1: `Authorization: Bearer <token issued by this server>`, which resolves to
  *   the API key this server provisioned for that user (see src/auth/).
  */
@@ -282,7 +282,7 @@ async function resolveCredentials(
     } catch {
       res
         .status(401)
-        .json(jsonRpcError(-32001, "This connection is no longer linked to an Estêvão API key. Reconnect."));
+        .json(jsonRpcError(-32001, "This connection is no longer linked to an Estevão API key. Reconnect."));
       return undefined;
     }
   }
@@ -297,7 +297,7 @@ async function resolveCredentials(
     .json(
       jsonRpcError(
         -32001,
-        "Missing Estêvão API key. Send it in the X-API-Key header (estevao_… format).",
+        "Missing Estevão API key. Send it in the X-API-Key header (estevao_… format).",
       ),
     );
   return undefined;

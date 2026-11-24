@@ -46,10 +46,10 @@ export function toToolResult(err: unknown): ToolErrorResult {
   } else if (err instanceof RateLimitError) {
     text =
       err.retryAfter != null
-        ? `Estêvão API rate limit reached. Retry in ${err.retryAfter} seconds.`
-        : "Estêvão API rate limit reached. Retry in a minute.";
+        ? `Estevão API rate limit reached. Retry in ${err.retryAfter} seconds.`
+        : "Estevão API rate limit reached. Retry in a minute.";
   } else if (err instanceof EstevaoApiError) {
-    text = `Estêvão API error (${err.status}${err.code ? ` ${err.code}` : ""}): ${err.message}`;
+    text = `Estevão API error (${err.status}${err.code ? ` ${err.code}` : ""}): ${err.message}`;
   } else {
     text = `Unexpected error: ${err instanceof Error ? err.message : String(err)}`;
   }

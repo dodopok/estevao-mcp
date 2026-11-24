@@ -35,7 +35,7 @@ function preferenceParams(prefs: Preferences): QueryParams {
 /** Guards the query string against anything that is not a plain preference name. */
 const PREFERENCE_KEY = /^[a-z][a-z0-9_]{0,60}$/;
 
-/** Typed wrapper over the Estêvão REST endpoints used by the MCP server. */
+/** Typed wrapper over the Estevão REST endpoints used by the MCP server. */
 export class EstevaoApi {
   constructor(private readonly http: EstevaoHttpClient) {}
 

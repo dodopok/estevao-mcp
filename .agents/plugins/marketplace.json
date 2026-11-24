@@ -1,7 +1,7 @@
 {
   "name": "estevao-local",
   "interface": {
-    "displayName": "Estêvão (local)"
+    "displayName": "Estevão (local)"
   },
   "plugins": [
     {

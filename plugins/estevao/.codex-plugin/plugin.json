@@ -1,7 +1,7 @@
 {
   "name": "estevao",
   "version": "0.3.0+codex.20260826132228",
-  "description": "Anglican liturgical calendar, lectionary and Daily Office via the hosted Est\u00eav\u00e3o MCP server.",
+  "description": "Anglican liturgical calendar, lectionary and Daily Office via the hosted Estev\u00e3o MCP server.",
   "author": {
     "name": "Caminho Anglicano",
     "url": "https://github.com/dodopok"
@@ -19,7 +19,7 @@
   ],
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "Est\u00eav\u00e3o",
+    "displayName": "Estev\u00e3o",
     "shortDescription": "Calend\u00e1rio, lecion\u00e1rio e Of\u00edcio Di\u00e1rio anglicanos",
     "longDescription": "Dados lit\u00fargicos anglicanos precisos: calend\u00e1rio com regras de preced\u00eancia, leituras do lecion\u00e1rio e Of\u00edcio Di\u00e1rio completo em v\u00e1rias edi\u00e7\u00f5es do Livro de Ora\u00e7\u00e3o Comum. As ferramentas s\u00e3o somente leitura e o acesso usa OAuth no servidor hospedado.",
     "developerName": "Caminho Anglicano",
