@@ -2,7 +2,7 @@
   "name": "estevao",
   "displayName": "Estevão",
   "description": "Anglican liturgical calendar, lectionary and Daily Office via the hosted Estevão MCP server.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "author": {
     "name": "Caminho Anglicano",
     "url": "https://github.com/dodopok"
