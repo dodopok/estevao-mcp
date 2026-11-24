@@ -18,6 +18,7 @@ type IdentityRow = {
   api_key_ciphertext: string | null;
   api_key_id: string | null;
   api_key_preview: string | null;
+  prayer_book: string | null;
 };
 
 export class PostgresOAuthStore implements OAuthStore {
@@ -224,6 +225,13 @@ export class PostgresOAuthStore implements OAuthStore {
     );
   }
 
+  async saveIdentityPrayerBook(id: string, prayerBook: string | undefined): Promise<void> {
+    await this.pool.query(
+      "update oauth_identities set prayer_book = $2, updated_at = now() where id = $1",
+      [id, prayerBook ?? null],
+    );
+  }
+
   async purgeExpired(): Promise<void> {
     await this.pool.query("delete from oauth_pending_authorizations where expires_at < now()");
     await this.pool.query(
@@ -255,5 +263,6 @@ function mapIdentity(row: IdentityRow): Identity {
     apiKeyCiphertext: row.api_key_ciphertext ?? undefined,
     apiKeyId: row.api_key_id ?? undefined,
     apiKeyPreview: row.api_key_preview ?? undefined,
+    prayerBook: row.prayer_book ?? undefined,
   };
 }

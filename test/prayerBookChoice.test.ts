@@ -159,3 +159,102 @@ describe("prayer book choice with a server default", () => {
     expect((prompt.messages[0].content as { text: string }).text).not.toMatch(/ask the user which prayer book/);
   });
 });
+
+describe("prayer book saved to the user's account", () => {
+  function fakeAccount(prayerBook?: string) {
+    const saves: Array<string | undefined> = [];
+    return {
+      saves,
+      account: {
+        prayerBook,
+        savePrayerBook: async (code: string | undefined) => {
+          saves.push(code);
+        },
+      },
+    };
+  }
+
+  async function clientWith(account: ReturnType<typeof fakeAccount>["account"]): Promise<Client> {
+    const config: Config = { apiKey: API_KEY, baseUrl: BASE_URL };
+    const api = new EstevaoApi(new EstevaoHttpClient(config.baseUrl, config.apiKey));
+    const server = createEstevaoServer({ api, config, account });
+    const client = new Client({ name: "test-client", version: "0.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    return client;
+  }
+
+  it("lists the save tool only when there is an account, annotated as a non-destructive write", async () => {
+    const without = await connectedClient();
+    expect((await without.listTools()).tools.map((t) => t.name)).not.toContain("set_default_prayer_book");
+
+    const withAccount = await clientWith(fakeAccount().account);
+    const tool = (await withAccount.listTools()).tools.find((t) => t.name === "set_default_prayer_book");
+    expect(tool?.title).toBeTruthy();
+    expect(tool?.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: true });
+  });
+
+  it("asks and suggests saving when the account has no book yet", async () => {
+    forbidCalendarCalls();
+    const client = await clientWith(fakeAccount().account);
+    expect(client.getInstructions()).toMatch(/save it with set_default_prayer_book/);
+    const result = await client.callTool({ name: "get_liturgical_day", arguments: { date: "2026-07-14" } });
+    const body = JSON.parse(text(result));
+    expect(body.prayerBookRequired).toBe(true);
+    expect(body.message).toMatch(/set_default_prayer_book/);
+  });
+
+  it("saves a known code, matching it case-insensitively", async () => {
+    const { account, saves } = fakeAccount();
+    const client = await clientWith(account);
+    const result = await client.callTool({ name: "set_default_prayer_book", arguments: { prayer_book: "LOC_2015" } });
+    expect(result.isError).toBeFalsy();
+    expect(JSON.parse(text(result))).toMatchObject({ saved: true, prayerBook: { code: "loc_2015" }, previous: null });
+    expect(saves).toEqual(["loc_2015"]);
+  });
+
+  it("refuses unknown and premium books without saving", async () => {
+    const { account, saves } = fakeAccount();
+    const client = await clientWith(account);
+
+    const unknown = await client.callTool({ name: "set_default_prayer_book", arguments: { prayer_book: "loc_9999" } });
+    expect(unknown.isError).toBe(true);
+    expect(text(unknown)).toMatch(/Unknown prayer book 'loc_9999'.*loc_2015/);
+
+    const premium = await client.callTool({ name: "set_default_prayer_book", arguments: { prayer_book: "loc_1549" } });
+    expect(premium.isError).toBe(true);
+    expect(text(premium)).toMatch(/premium/);
+
+    expect(saves).toEqual([]);
+  });
+
+  it("removes the saved book when given null", async () => {
+    const { account, saves } = fakeAccount("loc_2015");
+    const client = await clientWith(account);
+    const result = await client.callTool({ name: "set_default_prayer_book", arguments: { prayer_book: null } });
+    expect(JSON.parse(text(result))).toEqual({ saved: false, previous: "loc_2015" });
+    expect(saves).toEqual([undefined]);
+  });
+
+  it("uses the saved book ahead of the server default, and a named book ahead of both", async () => {
+    const config: Config = { apiKey: API_KEY, baseUrl: BASE_URL, defaultPrayerBook: "loc_1662" };
+    const api = new EstevaoApi(new EstevaoHttpClient(config.baseUrl, config.apiKey));
+    const server = createEstevaoServer({ api, config, account: fakeAccount("loc_2015").account });
+    const client = new Client({ name: "test-client", version: "0.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+    expect(client.getInstructions()).toMatch(/The user saved loc_2015/);
+    const saved = await client.callTool({ name: "get_liturgical_day", arguments: { date: "2026-07-14" } });
+    expect(JSON.parse(text(saved)).prayerBook).toBe("loc_2015");
+
+    const named = await client.callTool({
+      name: "get_liturgical_day",
+      arguments: { date: "2026-07-14", prayer_book: "loc_1662" },
+    });
+    expect(JSON.parse(text(named)).prayerBook).toBe("loc_1662");
+
+    const prompt = await client.getPrompt({ name: "explain_why", arguments: { date: "2026-07-14" } });
+    expect((prompt.messages[0].content as { text: string }).text).not.toMatch(/ask the user which prayer book/);
+  });
+});

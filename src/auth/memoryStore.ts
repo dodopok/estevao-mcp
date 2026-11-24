@@ -116,6 +116,11 @@ export class MemoryOAuthStore implements OAuthStore {
     identity.apiKeyPreview = key?.preview;
   }
 
+  async saveIdentityPrayerBook(id: string, prayerBook: string | undefined): Promise<void> {
+    const identity = this.identities.get(id);
+    if (identity) identity.prayerBook = prayerBook;
+  }
+
   async purgeExpired(): Promise<void> {
     const now = Date.now();
     for (const [id, item] of this.pending) {

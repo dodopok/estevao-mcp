@@ -10,6 +10,7 @@ import { InvalidIdentityTokenError } from "../src/auth/firebase.js";
 import type { AuthEnv } from "../src/auth/env.js";
 import { clearCache } from "../src/cache/lru.js";
 import calendarDay from "./fixtures/calendar-day.json" with { type: "json" };
+import prayerBooks from "./fixtures/prayer-books.json" with { type: "json" };
 
 const API_BASE = "https://api.test";
 const MINTED_KEY = `estevao_${"b".repeat(48)}`;
@@ -58,7 +59,7 @@ function upstream(): Upstream {
         });
       }
       if (url.pathname === "/api/v1/prayer_books") {
-        return Response.json({ prayer_books: [] });
+        return Response.json(prayerBooks);
       }
       if (/\/api\/v1\/calendar\/\d+\/\d+\/\d+$/.test(url.pathname)) {
         return Response.json(calendarDay);
@@ -300,6 +301,67 @@ describe("OAuth authorization flow", () => {
       expect(liturgicalCalls.length).toBeGreaterThan(0);
       for (const call of liturgicalCalls) expect(call.apiKey).toBe(MINTED_KEY);
       expect(up.calls.some((call) => call.authorization?.includes(tokens.access_token))).toBe(false);
+    } finally {
+      server.close();
+    }
+  });
+
+  it("remembers the user's prayer book across conversations", async () => {
+    // No server default: the hosted deployment leaves ESTEVAO_DEFAULT_PRAYER_BOOK unset.
+    const { origin, server, store } = await start({ defaultPrayerBook: undefined });
+    try {
+      const clientId = await registerClient(origin);
+      const { verifier, challenge } = pkce();
+      const { code } = await grantCode(origin, clientId, challenge);
+      const tokens = (await (await exchangeCode(origin, clientId, code, verifier)).json()) as {
+        access_token: string;
+      };
+      const connect = async () => {
+        const transport = new StreamableHTTPClientTransport(new URL(`${origin}/mcp`), {
+          requestInit: { headers: { Authorization: `Bearer ${tokens.access_token}` } },
+        });
+        const client = new Client({ name: "oauth-test", version: "0.0.0" });
+        await client.connect(transport);
+        return client;
+      };
+      const firstText = (result: Awaited<ReturnType<Client["callTool"]>>) =>
+        (result.content as Array<{ type: string; text?: string }>)[0].text!;
+
+      // First conversation: nothing saved yet, so the tool asks and the account can save.
+      const first = await connect();
+      expect(first.getInstructions()).toMatch(/set_default_prayer_book/);
+      const asked = await first.callTool({ name: "get_liturgical_day", arguments: { date: "2026-07-14" } });
+      expect(JSON.parse(firstText(asked)).prayerBookRequired).toBe(true);
+      const saved = await first.callTool({ name: "set_default_prayer_book", arguments: { prayer_book: "loc_2015" } });
+      expect(JSON.parse(firstText(saved))).toMatchObject({ saved: true, prayerBook: { code: "loc_2015" } });
+      await first.close();
+
+      const identity = await store.findIdentityByProviderUid("firebase-uid-1");
+      expect(identity?.prayerBook).toBe("loc_2015");
+
+      // A later conversation uses the saved book without asking.
+      const second = await connect();
+      expect(second.getInstructions()).toMatch(/The user saved loc_2015/);
+      const day = await second.callTool({ name: "get_liturgical_day", arguments: { date: "2026-07-14" } });
+      expect(JSON.parse(firstText(day))).toMatchObject({ season: "Tempo Comum", prayerBook: "loc_2015" });
+      await second.close();
+    } finally {
+      server.close();
+    }
+  });
+
+  it("offers no account tools to raw API-key callers", async () => {
+    const { origin, server } = await start({ defaultPrayerBook: undefined });
+    try {
+      const transport = new StreamableHTTPClientTransport(new URL(`${origin}/mcp`), {
+        requestInit: { headers: { "X-API-Key": `estevao_${"a".repeat(48)}` } },
+      });
+      const client = new Client({ name: "key-test", version: "0.0.0" });
+      await client.connect(transport);
+      const { tools } = await client.listTools();
+      expect(tools.map((t) => t.name)).not.toContain("set_default_prayer_book");
+      expect(client.getInstructions()).not.toMatch(/set_default_prayer_book/);
+      await client.close();
     } finally {
       server.close();
     }

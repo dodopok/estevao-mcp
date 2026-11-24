@@ -3,6 +3,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import { getOAuthProtectedResourceMetadataUrl } from "@modelcontextprotocol/sdk/server/auth/router.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import type { AccountPreferences } from "./context.js";
 import { LRUCache } from "lru-cache";
 import { createEstevaoServer } from "./server.js";
 import { EstevaoHttpClient } from "./client/http.js";
@@ -164,7 +165,11 @@ export async function createApp(env: HttpEnv): Promise<express.Express> {
       timezone: env.timezone,
       language: env.language,
     };
-    const server = createEstevaoServer({ api: apiFor(resolved.key, resolved.onUnauthorized), config });
+    const server = createEstevaoServer({
+      api: apiFor(resolved.key, resolved.onUnauthorized),
+      config,
+      account: resolved.account,
+    });
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       ...(env.allowedHosts?.length
@@ -228,7 +233,12 @@ export async function createAuthRuntime(env: HttpEnv): Promise<AuthRuntime | und
   return { provider, store, config };
 }
 
-type ResolvedCredentials = { key: string; onUnauthorized?: () => void };
+type ResolvedCredentials = {
+  key: string;
+  onUnauthorized?: () => void;
+  /** Only for OAuth sign-ins: the modes with a raw key have no account to save to. */
+  account?: AccountPreferences;
+};
 
 async function resolveCredentials(
   req: Request,
@@ -260,10 +270,14 @@ async function resolveCredentials(
       return undefined;
     }
     try {
-      const key = await runtime.provider.apiKeyForToken(authInfo);
+      const account = await runtime.provider.accountForToken(authInfo);
       return {
-        key,
+        key: account.key,
         onUnauthorized: () => void runtime.provider.invalidateIdentityKey(authInfo),
+        account: {
+          prayerBook: account.prayerBook,
+          savePrayerBook: (code) => runtime.provider.saveAccountPrayerBook(account.identityId, code),
+        },
       };
     } catch {
       res

@@ -4,9 +4,21 @@ import { cached, TTL_METADATA } from "./cache/lru.js";
 import { normalizePrayerBooks } from "./normalize/prayerBooks.js";
 import type { PrayerBook } from "./normalize/types.js";
 
+/**
+ * The signed-in user's saved settings. Present only when the request comes from an
+ * OAuth sign-in; stdio and raw API-key requests have no account to save to.
+ */
+export interface AccountPreferences {
+  /** The prayer book the user saved, used when a call names none. */
+  prayerBook?: string;
+  /** Saves the user's prayer book, or removes it when given undefined. */
+  savePrayerBook(code: string | undefined): Promise<void>;
+}
+
 export interface ServerContext {
   api: EstevaoApi;
   config: Config;
+  account?: AccountPreferences;
 }
 
 /**
@@ -39,8 +51,12 @@ export interface PreferenceArgs {
  * response that lists the catalogue, so the user can be asked which book they follow.
  */
 export class PrayerBookRequiredError extends Error {
-  constructor(readonly loadCatalogue: () => Promise<PrayerBook[]>) {
-    super("No prayer book was given and this server has no default prayer book.");
+  constructor(
+    readonly loadCatalogue: () => Promise<PrayerBook[]>,
+    /** Whether the answer can be saved to the user's account with set_default_prayer_book. */
+    readonly canSave = false,
+  ) {
+    super("No prayer book was given, and none is saved for the user or configured on the server.");
     this.name = "PrayerBookRequiredError";
   }
 }
@@ -53,9 +69,15 @@ export async function loadPrayerBookCatalogue(ctx: ServerContext): Promise<Praye
   return books.prayerBooks;
 }
 
+/** The prayer book used when a call names none: the user's saved one, then the server's. */
+export function fallbackPrayerBook(ctx: ServerContext): string | undefined {
+  return ctx.account?.prayerBook || ctx.config.defaultPrayerBook;
+}
+
+/** Resolution order: the book the call names, the user's saved book, the server default. */
 export function resolvePrayerBook(ctx: ServerContext, requested: string | undefined): string {
-  const code = requested?.trim() || ctx.config.defaultPrayerBook;
-  if (!code) throw new PrayerBookRequiredError(() => loadPrayerBookCatalogue(ctx));
+  const code = requested?.trim() || fallbackPrayerBook(ctx);
+  if (!code) throw new PrayerBookRequiredError(() => loadPrayerBookCatalogue(ctx), Boolean(ctx.account));
   return code;
 }
 
@@ -65,6 +87,10 @@ export const PRAYER_BOOK_REQUIRED_MESSAGE =
   "using the list below, then call again with prayer_book set to its code. Keep using that code for " +
   "the rest of the conversation unless the user names a different book. Books marked premium are " +
   "not available through this server.";
+
+export const SAVE_PRAYER_BOOK_HINT =
+  "Once the user says which book they follow, save it with set_default_prayer_book so later " +
+  "conversations use it without asking.";
 
 /** The response given instead of data when no prayer book could be resolved. */
 export async function prayerBookRequiredPayload(err: PrayerBookRequiredError): Promise<object> {
@@ -82,11 +108,12 @@ export async function prayerBookRequiredPayload(err: PrayerBookRequiredError): P
     // The catalogue is a convenience here; without it, list_prayer_books still works.
     prayerBooks = undefined;
   }
+  let message = PRAYER_BOOK_REQUIRED_MESSAGE;
+  if (err.canSave) message += ` ${SAVE_PRAYER_BOOK_HINT}`;
+  if (!prayerBooks) message += " The list could not be loaded right now; call list_prayer_books.";
   return {
     prayerBookRequired: true,
-    message: prayerBooks
-      ? PRAYER_BOOK_REQUIRED_MESSAGE
-      : `${PRAYER_BOOK_REQUIRED_MESSAGE} The list could not be loaded right now; call list_prayer_books.`,
+    message,
     ...(prayerBooks ? { prayerBooks } : {}),
   };
 }

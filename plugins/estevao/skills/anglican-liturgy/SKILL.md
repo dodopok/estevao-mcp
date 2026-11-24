@@ -11,7 +11,7 @@ twenty editions of the Book of Common Prayer and the Livro de Oração Comum. An
 tools return, not from general knowledge: calendars differ between provinces and editions, and a
 date that looks obvious (a saint's day, a colour) is often resolved differently by precedence.
 
-All tools are read-only.
+All tools are read-only except `set_default_prayer_book`, which saves the user's own prayer book.
 
 ## Settle the prayer book once, at the start
 
@@ -25,9 +25,14 @@ to know which book the person follows.
    tool. Ask openly rather than offering a fixed short list, since the catalogue is long and
    growing. If they are unsure, call `list_prayer_books` (with `language` set to theirs) and show
    the editions in their language.
-3. From then on, pass that `prayer_book` on every call in the conversation without asking again.
-4. If they ask about another book for one question ("and in the 1662?"), use it for that question
-   only, then go back to their book. Switch for good only when they say so.
+3. If `set_default_prayer_book` is available, save their answer with it, so later conversations
+   use the book without asking. Tell them it was saved and that they can change it any time.
+4. From then on, pass that `prayer_book` on every call in the conversation without asking again.
+5. If they ask about another book for one question ("and in the 1662?"), use it for that question
+   only, then go back to their book. Switch for good only when they say so, and then save the new
+   one with `set_default_prayer_book` (or remove it with `null` if they ask).
+
+If the server's instructions say the user already saved a book, use it without asking.
 
 If a tool answers with `prayerBookRequired: true` instead of data, no book was passed: ask the
 person, using the list it returns, and call again with their choice.

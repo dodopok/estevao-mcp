@@ -41,7 +41,7 @@ Then ask things like *"what are the readings for next Sunday?"*, *"assemble toni
 
 ## Tools
 
-Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every date-scoped tool takes a `prayer_book`; all tools are read-only. See [Choosing a prayer book](#choosing-a-prayer-book). Prayer book codes are validated by the API rather than pinned in this server, so editions added upstream work without a release here — `list_prayer_books` always shows the current catalogue.
+Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every date-scoped tool takes a `prayer_book`. All tools are read-only except `set_default_prayer_book`, which saves the signed-in user's own prayer book on this server. See [Choosing a prayer book](#choosing-a-prayer-book). Prayer book codes are validated by the API rather than pinned in this server, so editions added upstream work without a release here — `list_prayer_books` always shows the current catalogue.
 
 | Tool | What it does |
 |---|---|
@@ -58,6 +58,7 @@ Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every date-scoped tool take
 | `get_prayer_book_preferences` | Which preferences a book accepts (psalm translation, canticles, cycles) plus its office-level options |
 | `explain_liturgical_day` | The reasoning behind a date: precedence, transfers, colour and how each reading was chosen |
 | `compare_prayer_books` | Side-by-side comparison of 2–4 prayer books for the same day or office |
+| `set_default_prayer_book` | Saves the prayer book the user follows to their account, so later conversations use it (OAuth sign-ins only) |
 
 ## Resources & prompts
 
@@ -85,6 +86,14 @@ the model asks the user which book they follow. The server's MCP instructions te
 settle the book once, at the first liturgical question, and pass it on every later call in the
 conversation unless the user names a different book for a specific question. The prompts and the
 `ordo://` resources follow the same rule.
+
+On the hosted server, users who signed in with OAuth can keep their choice: once they say which
+book they follow, the model saves it with `set_default_prayer_book`, and later conversations use
+it without asking. Only the book code is stored, next to the account's encrypted API key, and
+passing `null` removes it. When a call names no book, the server resolves one in this order: the
+book the call names, the book saved to the account, `ESTEVAO_DEFAULT_PRAYER_BOOK`, and otherwise
+the catalogue so the user can be asked. Raw API-key and stdio connections have no account, so
+the tool is not offered there.
 
 A personal deployment that only ever uses one book can set `ESTEVAO_DEFAULT_PRAYER_BOOK` to skip
 the question. The hosted server leaves it unset.
@@ -216,7 +225,8 @@ Interoperability details that make this work across clients:
   are both accepted; clients that pre-register a `client_id` work too.
 - **Client authentication.** `none` (public clients, the common case) and both
   `client_secret_post` and `client_secret_basic` for confidential ones.
-- **Scopes.** There is one read-only scope, `liturgy:read`. Clients that ask for unrelated
+- **Scopes.** There is one scope, `liturgy:read`. The only write it allows is saving the user's own
+  prayer book on this server; nothing is written to the Estêvão API. Clients that ask for unrelated
   scopes (`openid profile`, `mcp`, or nothing) still get a working connection.
 - **CORS.** Preflight is answered and `WWW-Authenticate` is exposed, so browser-based clients
   can read the challenge and start the flow.
