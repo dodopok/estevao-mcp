@@ -1,7 +1,7 @@
 {
   "name": "estevao-mcp",
   "version": "0.4.0",
-  "description": "MCP server for the Estêvão API — Anglican liturgical calendar, lectionary and Daily Office (Book of Common Prayer / Livro de Oração Comum)",
+  "description": "MCP server for the Estevão API — Anglican liturgical calendar, lectionary and Daily Office (Book of Common Prayer / Livro de Oração Comum)",
   "mcpName": "io.github.dodopok/estevao-mcp",
   "type": "module",
   "license": "MIT",
@@ -26,7 +26,7 @@
     "inspector": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
     "start:http": "node dist/http.js",
     "dev:http": "tsx src/http.ts",
-    "version": "tsx scripts/sync-version.ts && git add server.json"
+    "version": "tsx scripts/sync-version.ts && git add server.json plugins/estevao/.claude-plugin/plugin.json .claude-plugin/marketplace.json"
   },
   "keywords": [
     "mcp",

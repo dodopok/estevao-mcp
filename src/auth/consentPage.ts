@@ -26,10 +26,10 @@ export function renderConsentPage(options: {
   });
 
   return layout(
-    "Conectar ao Estêvão",
+    "Conectar ao Estevão",
     `
     <main class="card">
-      <p class="eyebrow">Estêvão · API litúrgica</p>
+      <p class="eyebrow">Estevão · API litúrgica</p>
       <h1>Conectar <strong>${escapeHtml(context.clientName)}</strong></h1>
       <p class="lede">
         ${escapeHtml(context.clientName)} quer acessar o calendário litúrgico, o lecionário e o
@@ -240,7 +240,7 @@ export function renderMessagePage(title: string, message: string): string {
   return layout(
     title,
     `<main class="card">
-       <p class="eyebrow">Estêvão · API litúrgica</p>
+       <p class="eyebrow">Estevão · API litúrgica</p>
        <h1>${escapeHtml(title)}</h1>
        <p class="lede">${escapeHtml(message)}</p>
      </main>`,

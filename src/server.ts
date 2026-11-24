@@ -15,7 +15,7 @@ export const SERVER_VERSION = pkg.version;
  */
 export function serverInstructions(ctx: Pick<ServerContext, "config" | "account">): string {
   const base =
-    "Estêvão serves Anglican liturgical data, and every answer depends on the prayer book: calendars, " +
+    "Estevão serves Anglican liturgical data, and every answer depends on the prayer book: calendars, " +
     "saints, readings, colours and offices differ between the editions served here. ";
   const savedBook = ctx.account?.prayerBook;
   if (savedBook) {
@@ -51,6 +51,7 @@ export function createEstevaoServer(ctx: ServerContext): McpServer {
   const server = new McpServer(
     {
       name: SERVER_NAME,
+      title: "Estevão",
       version: SERVER_VERSION,
     },
     { instructions: serverInstructions(ctx) },

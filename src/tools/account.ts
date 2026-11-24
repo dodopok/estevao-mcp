@@ -6,7 +6,7 @@ import { jsonResult, safeHandler, textResult } from "./shared.js";
 
 /**
  * Tools that change the signed-in user's own settings on this server. They never write
- * to the Estêvão API or touch liturgical data. Registered only when the request comes
+ * to the Estevão API or touch liturgical data. Registered only when the request comes
  * from an OAuth sign-in, since that is the only mode with an account to save to.
  */
 export function registerAccountTools(server: McpServer, ctx: ServerContext, account: AccountPreferences): void {
@@ -15,7 +15,7 @@ export function registerAccountTools(server: McpServer, ctx: ServerContext, acco
     {
       title: "Save my prayer book",
       description:
-        "Saves the prayer book the user follows to their Estêvão account. Later calls that name no " +
+        "Saves the prayer book the user follows to their Estevão account. Later calls that name no " +
         "prayer_book, in this and future conversations, use it. Only the book code is stored. Pass " +
         "null to remove the saved book.",
       inputSchema: {

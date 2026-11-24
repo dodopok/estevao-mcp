@@ -5,7 +5,7 @@ export interface Identity {
   providerUid: string;
   email?: string;
   name?: string;
-  /** Estêvão API key, encrypted at rest. Undefined until the first grant. */
+  /** Estevão API key, encrypted at rest. Undefined until the first grant. */
   apiKeyCiphertext?: string;
   apiKeyId?: string;
   apiKeyPreview?: string;

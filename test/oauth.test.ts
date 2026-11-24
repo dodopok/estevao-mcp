@@ -24,7 +24,7 @@ interface Upstream {
   keyLimitReached: boolean;
 }
 
-/** Stubs the two Estêvão API surfaces the OAuth flow touches, and records every call. */
+/** Stubs the two Estevão API surfaces the OAuth flow touches, and records every call. */
 function upstream(): Upstream {
   const state: Upstream = {
     calls: [],
@@ -494,7 +494,7 @@ describe("OAuth hardening", () => {
     }
   });
 
-  it("explains the Estêvão key limit instead of failing silently", async () => {
+  it("explains the Estevão key limit instead of failing silently", async () => {
     const { origin, server, up } = await start();
     up.keyLimitReached = true;
     try {

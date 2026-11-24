@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "io.github.dodopok/estevao-mcp",
-  "description": "Anglican liturgical calendar, lectionary and Daily Office (Book of Common Prayer) via Estêvão API",
+  "description": "Anglican liturgical calendar, lectionary and Daily Office (Book of Common Prayer) via Estevão API",
   "repository": {
     "url": "https://github.com/dodopok/estevao-mcp",
     "source": "github"
@@ -24,7 +24,7 @@
       "environmentVariables": [
         {
           "name": "ESTEVAO_API_KEY",
-          "description": "Estêvão API key (estevao_ prefix)",
+          "description": "Estevão API key (estevao_ prefix)",
           "isRequired": true,
           "isSecret": true
         }

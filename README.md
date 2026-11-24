@@ -4,7 +4,7 @@
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-io.github.dodopok%2Festevao--mcp-blue)](https://registry.modelcontextprotocol.io/?search=estevao)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-MCP (Model Context Protocol) server for the [Estêvão API](https://github.com/dodopok/estevao-api) — the liturgical engine behind the Ordo app. Gives Claude and any MCP client accurate Anglican liturgical data: calendar (with real precedence rules), lectionary readings, and the fully assembled Daily Office across multiple editions of the Book of Common Prayer / Livro de Oração Comum.
+MCP (Model Context Protocol) server for the [Estevão API](https://github.com/dodopok/estevao-api) — the liturgical engine behind the Ordo app. Gives Claude and any MCP client accurate Anglican liturgical data: calendar (with real precedence rules), lectionary readings, and the fully assembled Daily Office across multiple editions of the Book of Common Prayer / Livro de Oração Comum.
 
 ## Quick start
 
@@ -17,7 +17,7 @@ codex mcp add estevao --url https://mcp.caminhoanglicano.com.br/mcp             
 
 Other clients: see [Connecting any MCP client](#connecting-any-mcp-client).
 
-**Local (stdio)** — you need an Estêvão API key (`estevao_…`):
+**Local (stdio)** — you need an Estevão API key (`estevao_…`):
 
 ```bash
 claude mcp add estevao --env ESTEVAO_API_KEY=estevao_your_key -- npx -y estevao-mcp
@@ -71,7 +71,7 @@ Dates accept `YYYY-MM-DD`, `today` or `next-sunday`. Every date-scoped tool take
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ESTEVAO_API_KEY` | — (required for stdio) | API key for the Estêvão API |
+| `ESTEVAO_API_KEY` | — (required for stdio) | API key for the Estevão API |
 | `ESTEVAO_BASE_URL` | `https://api.caminhoanglicano.com.br` | Override for local/staging |
 | `ESTEVAO_DEFAULT_PRAYER_BOOK` | — (none) | Prayer book used when a call names none. Leave unset on shared deployments; see below |
 | `ESTEVAO_TIMEZONE` | system | IANA timezone used to resolve `today` |
@@ -123,7 +123,7 @@ codex mcp add estevao --url https://mcp.caminhoanglicano.com.br/mcp && codex mcp
 The client discovers the authorization server, registers itself, opens the consent screen,
 and the user signs in with the same Google/e-mail account they use in the
 [developer portal](https://estevao.caminhoanglicano.com.br). The server then provisions an
-Estêvão API key for that account, encrypts it at rest and uses it for every upstream call —
+Estevão API key for that account, encrypts it at rest and uses it for every upstream call —
 the user never sees or handles a key, and the client's token is never forwarded upstream.
 
 ### Auth modes
@@ -197,7 +197,7 @@ and the consent screen at `/oauth/consent`. `GET /healthz` reports the active mo
 Security properties: PKCE `S256` is mandatory, authorization codes are single-use and expire in
 60s, refresh tokens rotate on use, access tokens are opaque and stored only as digests, tokens
 are bound to this server's resource identifier (RFC 8707) and rejected otherwise, and the
-Estêvão API key is AES-256-GCM encrypted at rest.
+Estevão API key is AES-256-GCM encrypted at rest.
 
 ### Connecting any MCP client
 
@@ -226,7 +226,7 @@ Interoperability details that make this work across clients:
 - **Client authentication.** `none` (public clients, the common case) and both
   `client_secret_post` and `client_secret_basic` for confidential ones.
 - **Scopes.** There is one scope, `liturgy:read`. The only write it allows is saving the user's own
-  prayer book on this server; nothing is written to the Estêvão API. Clients that ask for unrelated
+  prayer book on this server; nothing is written to the Estevão API. Clients that ask for unrelated
   scopes (`openid profile`, `mcp`, or nothing) still get a working connection.
 - **CORS.** Preflight is answered and `WWW-Authenticate` is exposed, so browser-based clients
   can read the challenge and start the flow.

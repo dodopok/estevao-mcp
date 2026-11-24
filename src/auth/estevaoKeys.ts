@@ -1,10 +1,10 @@
 /**
- * Provisioning of Estêvão API keys on behalf of a signed-in developer.
+ * Provisioning of Estevão API keys on behalf of a signed-in developer.
  *
  * Uses the developer portal's own endpoints (`/api/v1/developers/api_keys`) with the
- * caller's Firebase ID token — the Estêvão API needs no changes to support OAuth here.
+ * caller's Firebase ID token — the Estevão API needs no changes to support OAuth here.
  * The resulting key never leaves this server: it is encrypted at rest and only ever
- * travels to the Estêvão API in the `X-API-Key` header.
+ * travels to the Estevão API in the `X-API-Key` header.
  */
 
 export class KeyProvisioningError extends Error {
@@ -61,13 +61,13 @@ export async function createApiKey({
   const body = (await safeJson(response)) as ApiKeyResponse | undefined;
 
   if (response.status === 401) {
-    throw new KeyProvisioningError("The Estêvão API rejected this sign-in.", "unauthorized");
+    throw new KeyProvisioningError("The Estevão API rejected this sign-in.", "unauthorized");
   }
   if (response.status === 403) {
     const message = body?.error ?? "";
     if (/limit/i.test(message)) {
       throw new KeyProvisioningError(
-        "You have reached the maximum number of API keys on your Estêvão account. " +
+        "You have reached the maximum number of API keys on your Estevão account. " +
           "Delete one in the developer portal and try connecting again.",
         "key_limit_reached",
       );
@@ -79,7 +79,7 @@ export async function createApiKey({
   }
   if (!response.ok || !body?.full_key) {
     throw new KeyProvisioningError(
-      body?.error ?? body?.errors?.join(", ") ?? `Estêvão API returned ${response.status}.`,
+      body?.error ?? body?.errors?.join(", ") ?? `Estevão API returned ${response.status}.`,
       "upstream_error",
     );
   }

@@ -1,4 +1,4 @@
-# Estêvão — plugin MCP para Codex, Claude e outros clientes
+# Estevão — plugin MCP para Codex, Claude e outros clientes
 
 Dá ao Claude dados litúrgicos anglicanos precisos: calendário com regras reais de precedência,
 lecionário, coletas e o Ofício Diário completo em várias edições do Livro de Oração Comum /
@@ -69,7 +69,7 @@ parâmetros da ferramenta, como uma data, um código de livro de oração ou um 
 conteúdo da conversa não é enviado.
 
 Na primeira conexão, o navegador abre a tela de autorização, e você entra com a conta do portal do
-desenvolvedor (Google ou e-mail). O servidor cria uma chave da API Estêvão em seu nome, guarda essa
+desenvolvedor (Google ou e-mail). O servidor cria uma chave da API Estevão em seu nome, guarda essa
 chave criptografada e a usa só para consultar `api.caminhoanglicano.com.br`. Você pode revogar a
 chave no [painel](https://estevao.caminhoanglicano.com.br/dashboard/keys) a qualquer momento.
 
@@ -81,7 +81,7 @@ Política de privacidade: https://estevao.caminhoanglicano.com.br/privacy · Sup
 
 ---
 
-**English.** Gives Claude accurate Anglican liturgical data from the Estêvão engine: the calendar
+**English.** Gives Claude accurate Anglican liturgical data from the Estevão engine: the calendar
 with real precedence rules, lectionary readings, collects and the fully assembled Daily Office in
 more than twenty editions of the Book of Common Prayer and the Livro de Oração Comum. It contains a
 reference to the hosted MCP server (`https://mcp.caminhoanglicano.com.br/mcp`, 13 read-only tools

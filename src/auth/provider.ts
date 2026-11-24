@@ -28,7 +28,7 @@ export const LITURGY_SCOPE = "liturgy:read";
 
 export interface AuthServerConfig {
   store: OAuthStore;
-  /** 32-byte key used to encrypt Estêvão API keys at rest. */
+  /** 32-byte key used to encrypt Estevão API keys at rest. */
   encryptionKey: Buffer;
   /** Public origin of this MCP deployment, e.g. https://mcp.caminhoanglicano.com.br */
   issuer: URL;
@@ -41,7 +41,7 @@ export interface AuthServerConfig {
   refreshTokenTtlSeconds?: number;
   authorizationCodeTtlSeconds?: number;
   pendingAuthorizationTtlSeconds?: number;
-  /** Test seam for upstream Estêvão API calls. */
+  /** Test seam for upstream Estevão API calls. */
   fetchFn?: typeof fetch;
 }
 
@@ -117,7 +117,7 @@ export class EstevaoOAuthProvider implements OAuthServerProvider {
 
   /**
    * Step 2: the user signed in with the developer portal's Firebase project and
-   * approved. Resolve their Estêvão API key and hand the client an authorization code.
+   * approved. Resolve their Estevão API key and hand the client an authorization code.
    */
   async completeAuthorization(
     requestId: string,
@@ -267,7 +267,7 @@ export class EstevaoOAuthProvider implements OAuthServerProvider {
     await this.config.store.revokeToken(tokenHash(request.token));
   }
 
-  /** Resolves the Estêvão API key behind an authenticated MCP request. */
+  /** Resolves the Estevão API key behind an authenticated MCP request. */
   async apiKeyForToken(authInfo: AuthInfo): Promise<string> {
     return (await this.accountForToken(authInfo)).key;
   }
@@ -280,13 +280,13 @@ export class EstevaoOAuthProvider implements OAuthServerProvider {
     }
     const identity = await this.config.store.getIdentity(identityId);
     if (!identity?.apiKeyCiphertext) {
-      throw new InvalidTokenError("No Estêvão API key is linked to this account. Reconnect.");
+      throw new InvalidTokenError("No Estevão API key is linked to this account. Reconnect.");
     }
     let key: string;
     try {
       key = decryptSecret(identity.apiKeyCiphertext, this.config.encryptionKey);
     } catch {
-      throw new ServerError("Could not read the stored Estêvão API key.");
+      throw new ServerError("Could not read the stored Estevão API key.");
     }
     return { identityId, key, prayerBook: identity.prayerBook };
   }

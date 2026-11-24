@@ -1,11 +1,11 @@
 ---
 name: anglican-liturgy
-description: Answer questions about the Anglican liturgical calendar, lectionary readings, collects, saints and holy days, liturgical seasons and colours, and assemble the Daily Office (Morning Prayer, Evening Prayer, Compline) from the Book of Common Prayer or the Livro de Oração Comum, using the Estêvão tools. Use whenever someone asks what is celebrated on a date, which readings or psalms are appointed, what colour or season it is, why a feast was transferred, how two prayer books differ, or wants an office or a liturgy sheet (boletim) — in Portuguese ("leituras do domingo", "Ofício Diário", "Completas", "cor litúrgica", "LOC"), English or Spanish.
+description: Answer questions about the Anglican liturgical calendar, lectionary readings, collects, saints and holy days, liturgical seasons and colours, and assemble the Daily Office (Morning Prayer, Evening Prayer, Compline) from the Book of Common Prayer or the Livro de Oração Comum, using the Estevão tools. Use whenever someone asks what is celebrated on a date, which readings or psalms are appointed, what colour or season it is, why a feast was transferred, how two prayer books differ, or wants an office or a liturgy sheet (boletim) — in Portuguese ("leituras do domingo", "Ofício Diário", "Completas", "cor litúrgica", "LOC"), English or Spanish.
 ---
 
-# Anglican liturgy with Estêvão
+# Anglican liturgy with Estevão
 
-The Estêvão tools return liturgical data computed by a calendar engine: precedence between
+The Estevão tools return liturgical data computed by a calendar engine: precedence between
 celebrations, transfers, lectionary cycles and the assembled text of each office, for more than
 twenty editions of the Book of Common Prayer and the Livro de Oração Comum. Answer from what the
 tools return, not from general knowledge: calendars differ between provinces and editions, and a
@@ -86,7 +86,7 @@ differ per book: call `get_prayer_book_preferences` for that book before passing
 
 - **Rate limit**: the API allows a limited number of requests per minute and per day. Tell the
   person and suggest trying again later; do not retry in a loop.
-- **Sign-in or key errors**: the connection signs in with the person's account on the Estêvão
+- **Sign-in or key errors**: the connection signs in with the person's account on the Estevão
   developer portal. If sign-in reports that the key limit was reached, the person can revoke an
   unused key at https://estevao.caminhoanglicano.com.br/dashboard/keys and connect again.
 - **Office not available**: not every book has every office. Check `list_prayer_books` for the
