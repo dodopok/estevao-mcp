@@ -256,6 +256,13 @@ O repositório inclui um pacote universal em [`plugins/estevao`](plugins/estevao
 para Codex e Claude Code e uma configuração MCP compartilhada. O pacote aponta para o servidor
 hospedado, então a conexão usa OAuth e não exige copiar uma API key.
 
+O plugin do Claude traz cinco skills, descritas no [README do plugin](plugins/estevao/README.md):
+- liturgia anglicana;
+- planejamento com exportação para CSV e `.ics`;
+- folheto do culto;
+- rezar o Ofício;
+- integração com a API para desenvolvedores.
+
 Para Claude Code:
 
 ```
