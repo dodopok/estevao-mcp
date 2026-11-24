@@ -69,10 +69,7 @@ que guarda na sua conta o livro de oração que você segue.
   - `estevao-api`: ajudar desenvolvedores a usar a API REST do Estevão no próprio código
     (autenticação, v2, erros, limites e cache).
 
-O plugin não tem hooks nem servidor local. A única coisa que roda na sua máquina é
-`skills/liturgical-planning/scripts/make_ics.py`, quando você pede a exportação para `.ics`. É um
-script Python curto, só com a biblioteca padrão e sem acesso à rede, que grava o arquivo do
-calendário.
+O plugin não tem hooks, scripts nem servidor local: só o conector e as skills, que são texto.
 
 ## Dados e privacidade
 
@@ -106,9 +103,8 @@ five skills:
 - `pray-the-office`, the Daily Office one part at a time;
 - `estevao-api`, for developers using the REST API.
 
-It has no hooks and no local server. The only local code is
-`skills/liturgical-planning/scripts/make_ics.py`, a short standard-library Python script with no
-network access that writes the `.ics` file when the user asks for it. Claude sends only tool
+It has no hooks, scripts or local server: only the connector and the skills, which are text.
+Claude sends only tool
 parameters such as a date, a prayer book code or a search term; conversation content is not sent.
 The `estevao-api` skill may read the public documentation at `estevao.caminhoanglicano.com.br`. Privacy policy:
 https://estevao.caminhoanglicano.com.br/en/privacy.
