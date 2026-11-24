@@ -56,17 +56,30 @@ que guarda na sua conta o livro de oração que você segue.
   `https://mcp.caminhoanglicano.com.br/mcp`. São 13 ferramentas de consulta (calendário, leituras,
   celebrações, Ofício Diário, comparação entre livros de oração e explicação de cada dia), uma
   ferramenta que guarda o livro de oração escolhido na sua conta, além de recursos e prompts.
-- **Skill `anglican-liturgy`** (`skills/anglican-liturgy/SKILL.md`): ensina o Claude a escolher o
-  livro de oração e a ferramenta certa, a responder perguntas de "por quê" pela trilha de decisão
-  do motor litúrgico e a reproduzir o texto litúrgico sem paráfrase.
+- **Skills** (`skills/`):
+  - `anglican-liturgy`: escolher o livro de oração e a ferramenta certa, responder perguntas de
+    "por quê" pela trilha de decisão do motor litúrgico e reproduzir o texto litúrgico sem
+    paráfrase.
+  - `liturgical-planning`: planejar um período (próximos domingos, um tempo litúrgico, um mês ou
+    um ano) com celebração, cor e leituras, e exportar em CSV ou `.ics` para o Google Agenda,
+    Outlook ou Apple Calendar. Serve para escala de leitores, paramentos e mural da paróquia.
+  - `liturgy-sheet`: montar o folheto do culto pronto para imprimir (Ofício Diário ou leituras de
+    um domingo), em Word, PDF ou HTML, com o texto do livro sem alterações.
+  - `pray-the-office`: conduzir o Ofício Diário parte por parte, no ritmo de quem reza.
+  - `estevao-api`: ajudar desenvolvedores a usar a API REST do Estevão no próprio código
+    (autenticação, v2, erros, limites e cache).
 
-O plugin não roda comandos locais, hooks nem scripts.
+O plugin não tem hooks nem servidor local. A única coisa que roda na sua máquina é
+`skills/liturgical-planning/scripts/make_ics.py`, quando você pede a exportação para `.ics`. É um
+script Python curto, só com a biblioteca padrão e sem acesso à rede, que grava o arquivo do
+calendário.
 
 ## Dados e privacidade
 
-O plugin só se conecta a `mcp.caminhoanglicano.com.br`. A cada chamada, o Claude envia os
-parâmetros da ferramenta, como uma data, um código de livro de oração ou um termo de busca. O
-conteúdo da conversa não é enviado.
+O conector do plugin só se conecta a `mcp.caminhoanglicano.com.br`. A cada chamada, o Claude envia
+os parâmetros da ferramenta, como uma data, um código de livro de oração ou um termo de busca. O
+conteúdo da conversa não é enviado. A skill `estevao-api` pode ler a documentação pública em
+`estevao.caminhoanglicano.com.br` quando o Claude tem acesso à web, sem enviar dados.
 
 Na primeira conexão, o navegador abre a tela de autorização, e você entra com a conta do portal do
 desenvolvedor (Google ou e-mail). O servidor cria uma chave da API Estevão em seu nome, guarda essa
@@ -86,7 +99,16 @@ with real precedence rules, lectionary readings, collects and the fully assemble
 more than twenty editions of the Book of Common Prayer and the Livro de Oração Comum. It contains a
 reference to the hosted MCP server (`https://mcp.caminhoanglicano.com.br/mcp`, 13 read-only tools
 plus one that saves the user's prayer book to their account, OAuth sign-in, no API key to paste) and
-the `anglican-liturgy` skill. It runs no local commands,
-hooks or scripts. Claude sends only tool parameters such as a date, a prayer book code or a search
-term; conversation content is not sent. Privacy policy:
+five skills:
+- `anglican-liturgy`;
+- `liturgical-planning`, with CSV and `.ics` export;
+- `liturgy-sheet`, print-ready service sheets;
+- `pray-the-office`, the Daily Office one part at a time;
+- `estevao-api`, for developers using the REST API.
+
+It has no hooks and no local server. The only local code is
+`skills/liturgical-planning/scripts/make_ics.py`, a short standard-library Python script with no
+network access that writes the `.ics` file when the user asks for it. Claude sends only tool
+parameters such as a date, a prayer book code or a search term; conversation content is not sent.
+The `estevao-api` skill may read the public documentation at `estevao.caminhoanglicano.com.br`. Privacy policy:
 https://estevao.caminhoanglicano.com.br/en/privacy.
