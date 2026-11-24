@@ -26,7 +26,7 @@ sandbox in the portal's playground.
 - **Authentication**: header `X-API-Key: estevao_…`.
   - The key is created in the portal's dashboard (https://estevao.caminhoanglicano.com.br) and
     is shown once.
-  - Keep it on the server, read from an environment variable such as `ESTEVAO_API_KEY`. Never
+  - Keep it on the server, in the application's secret configuration. Never
     put it in browser or mobile app code. For a front end, call your own backend, which calls
     the API.
   - Never ask the person to paste their key into the conversation.
@@ -123,18 +123,19 @@ Beyond that it answers `400 RANGE_TOO_LARGE`, with `max_days`.
 cURL:
 ```bash
 curl -s "https://api.caminhoanglicano.com.br/api/v2/days/2026-12-06?book=loc_2015&include=readings,collect" \
-  -H "X-API-Key: $ESTEVAO_API_KEY"
+  -H "X-API-Key: YOUR_API_KEY"
 ```
 
 TypeScript (server side):
 ```ts
 const BASE = "https://api.caminhoanglicano.com.br/api/v2";
 
-export async function getDay(date: string, book: string) {
+// apiKey comes from your server's secret configuration; never ship it to a browser.
+export async function getDay(apiKey: string, date: string, book: string) {
   const url = new URL(`${BASE}/days/${date}`);
   url.searchParams.set("book", book);
   url.searchParams.set("include", "readings,collect");
-  const res = await fetch(url, { headers: { "X-API-Key": process.env.ESTEVAO_API_KEY! } });
+  const res = await fetch(url, { headers: { "X-API-Key": apiKey } });
 
   if (res.status === 429) {
     const wait = Number(res.headers.get("Retry-After") ?? 60);
@@ -151,15 +152,16 @@ export async function getDay(date: string, book: string) {
 
 Python:
 ```python
-import os, requests
+import requests
 
 BASE = "https://api.caminhoanglicano.com.br/api/v2"
 
-def month(book: str, start: str, end: str):
+# api_key comes from your server's secret configuration; never ship it to a client.
+def month(api_key: str, book: str, start: str, end: str):
     res = requests.get(
         f"{BASE}/days",
         params={"book": book, "from": start, "to": end},
-        headers={"X-API-Key": os.environ["ESTEVAO_API_KEY"]},
+        headers={"X-API-Key": api_key},
         timeout=10,
     )
     if res.status_code == 429:

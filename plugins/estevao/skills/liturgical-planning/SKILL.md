@@ -61,27 +61,60 @@ A table, one row per date:
   order mark, so columns split and accents show correctly. Google Sheets and LibreOffice read
   the comma version.
 
-**.ics** (calendar apps): use the bundled script, which handles the format's escaping, line
-folding and stable event IDs.
+**.ics** (calendar apps): write the file yourself, following RFC 5545. Each date becomes an
+all-day event.
 
-1. Write a JSON list with one object per date:
-   ```json
-   [{"date": "2026-12-06",
-     "title": "2º Domingo do Advento (violeta)",
-     "description": "Cor: violeta\nCelebração: Nicolau\n1ª leitura: Isaías 40:1-11\nSalmo: Salmo 85:1-2, 8-13\n2ª leitura: 2 Pedro 3:8-15a\nEvangelho: Marcos 1:1-8\nLivro: loc_2027 · Ano B"}]
-   ```
-   Put the colour in the title when the plan is for vestments or the altar guild. Put the
-   readings and the prayer book in the description.
-2. Run `python3 scripts/make_ics.py events.json calendario.ics --name "Advento 2026"` from this
-   skill's directory.
-3. Give the person the file. Each date becomes an all-day event. Importing the same file again
-   updates the events instead of duplicating them.
+- **Event text.**
+  - Put the colour in the title when the plan is for vestments or the altar guild, for example
+    "2º Domingo do Advento (violeta)".
+  - Put the colour, the celebration, the readings and the prayer book in the description.
+- **File frame.**
+  - The file starts with `BEGIN:VCALENDAR`, `VERSION:2.0`, a `PRODID` and `CALSCALE:GREGORIAN`,
+    and ends with `END:VCALENDAR`.
+  - `X-WR-CALNAME` names the calendar in Google Calendar and Apple Calendar.
+- **One `VEVENT` per date**, with:
+  - `UID`: the same date and title must always give the same UID, so importing the file again
+    updates the events instead of duplicating them. For example, the date plus a short slug of
+    the title, `@estevao.caminhoanglicano.com.br`.
+  - `DTSTAMP`: the current UTC time, as `YYYYMMDDTHHMMSSZ`.
+  - `DTSTART;VALUE=DATE:YYYYMMDD`, and `DTEND;VALUE=DATE` set to the **next** day. All-day
+    events end on the day after.
+  - `SUMMARY`, an optional `DESCRIPTION`, and `TRANSP:TRANSPARENT`, so the day does not show as
+    busy.
+- **Text escaping** in `SUMMARY`, `DESCRIPTION` and `X-WR-CALNAME`: write a backslash as `\\`,
+  `;` as `\;`, `,` as `\,`, and a line break as `\n`. Verse references are full of commas, so
+  this matters.
+- **Line endings** are CRLF (`\r\n`), including after the last line.
+- **Line folding**: a line longer than 75 bytes (bytes, not characters, since accented letters
+  take two) continues on the next line, which starts with a single space. Never split inside a
+  multi-byte character.
 
-If scripts cannot run here, write the file by hand with the same rules:
-- CRLF line endings;
-- one all-day `VEVENT` per date with `DTSTART;VALUE=DATE` and `DTEND` set to the next day;
-- `\,`, `\;` and `\n` escaped in text;
-- lines longer than 75 bytes folded with a leading space.
+If you can run code here, generate the file with a short program that applies these rules, then
+check that it has no bare line feeds and no line over 75 bytes. Otherwise write it by hand.
+
+A two-event file looks like this (`DESCRIPTION` folded once):
+
+```text
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Estevao//Liturgical planning//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Advento 2026
+BEGIN:VEVENT
+UID:2026-12-06-2-domingo-do-advento@estevao.caminhoanglicano.com.br
+DTSTAMP:20261124T190000Z
+DTSTART;VALUE=DATE:20261206
+DTEND;VALUE=DATE:20261207
+SUMMARY:2º Domingo do Advento (violeta)
+DESCRIPTION:Cor: violeta\nCelebração: Nicolau\n1ª leitura: Isaías 40:1-
+ 11\nSalmo: Salmo 85:1-2\, 8-13\nEvangelho: Marcos 1:1-8
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR
+```
+
+Give the person the file and tell them how to import it: in Google Calendar, Settings → Import;
+in Apple Calendar, File → Import; in Outlook, open the file.
 
 ## Keep it factual
 
