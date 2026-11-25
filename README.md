@@ -296,6 +296,16 @@ npm run build && node dist/http.js
 docker build -t estevao-mcp . && docker run -p 3333:3333 --env-file .env estevao-mcp
 ```
 
+## Pull requests
+
+Titles and commit messages are Conventional Commits in English
+(`feat(tools): …`, `fix(oauth): …`). The description follows
+`.github/pull_request_template.md`: why, what changes, risks, deploy and
+publishing, how to undo, how to test, screens and the checklist. GitHub only
+fills the template in on its web page, so a PR opened through the API or the
+command line copies those sections and fills each one, writing "Nada." where
+one does not apply.
+
 ## Releasing
 
 ```bash
